@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.host.SpringBootValidationServer.model.Connection;
 import com.host.SpringBootValidationServer.model.NsGrNmsg;
 import com.host.SpringBootValidationServer.model.NsNrule;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -20,6 +21,7 @@ import java.util.Map;
 
 import static com.host.SpringBootValidationServer.service.MessageService.*;
 
+@Slf4j
 @Service
 public class RoutingService {
 
@@ -45,7 +47,6 @@ public class RoutingService {
                 }
 
                 receiverList.add(x.getReceiver().trim());
-
             }
         }
 
@@ -69,20 +70,19 @@ public class RoutingService {
             try {
                 connection = objectMapper.readValue(obj.getConnection(), Connection.class);
             } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException("Сообщение не прописано в правилах маршрутизации!");
             }
 
             if(connection.getType().trim().equalsIgnoreCase("API")){
-                sendToHttp(convertDOMXMLtoString(entry.getValue()), connection.getUrl());
-                System.out.println("Отправили Http "+ entry.getKey());
+//                sendToHttp(convertDOMXMLtoString(entry.getValue()), connection.getUrl());
             } else if(connection.getType().trim().equalsIgnoreCase("Kafka")){
-                sendToKafka(convertDOMXMLtoString(entry.getValue()), connection.getTopic());
-                System.out.println("Отправили Kafka "+ entry.getKey());
+//                sendToKafka(convertDOMXMLtoString(entry.getValue()), connection.getTopic());
+                System.out.println(convertDOMXMLtoString(entry.getValue()));
             }
 
         }
 
-
+        log.info("Сообщение успешно обработано!");
     }
 
     private void sendToHttp(String message, String url){
@@ -93,7 +93,7 @@ public class RoutingService {
         try {
             ResponseEntity<String> response = restTemplate.postForEntity(url, message, String.class);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(String.format("Ошибка при отправке сообщения по адресу %s; ", url) + e);
         }
 
     }

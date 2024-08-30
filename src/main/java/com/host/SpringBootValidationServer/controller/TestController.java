@@ -18,7 +18,7 @@ public class TestController {
 
     @GetMapping("/valid")
     public ResponseEntity<?> test() {
-        messageService.processMessage();
+        messageService.processMessage("xml");
         return ResponseEntity.ok("test!");
     }
 

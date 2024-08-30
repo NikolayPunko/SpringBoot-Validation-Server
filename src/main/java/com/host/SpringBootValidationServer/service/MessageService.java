@@ -11,6 +11,7 @@ import com.host.SpringBootValidationServer.repositories.NNODERepository;
 import com.host.SpringBootValidationServer.repositories.NRULERepository;
 import com.host.SpringBootValidationServer.util.XMLExamples;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
@@ -28,6 +29,7 @@ import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
 import java.util.*;
 
+@Slf4j
 @Service
 public class MessageService {
 
@@ -55,120 +57,146 @@ public class MessageService {
 
     @PostConstruct
     private void postConstruct() {
-        for (NsNmsg obj: nmsgRepository.findAll()) {
+        for (NsNmsg obj : nmsgRepository.findAll()) {
             NS_NMSG_MAP.put(obj.getMsgType().trim(), obj);
         }
 
-        for (NsNnode obj: nnodeRepository.findAll()) {
-            List<NsNnode> nnodeList = NS_NNODE_MAP.get(obj.getKnm().trim()) == null? new ArrayList<>(): NS_NNODE_MAP.get(obj.getKnm().trim());
+        for (NsNnode obj : nnodeRepository.findAll()) {
+            List<NsNnode> nnodeList = NS_NNODE_MAP.get(obj.getKnm().trim()) == null ? new ArrayList<>() : NS_NNODE_MAP.get(obj.getKnm().trim());
             nnodeList.add(obj);
             NS_NNODE_MAP.put(obj.getKnm().trim(), nnodeList);
         }
 
-        for (NsNrule obj: nruleRepository.findAll()) {
-            List<NsNrule> nruleList = NS_NRULE_MAP.get(obj.getKnm().trim()) == null? new ArrayList<>(): NS_NRULE_MAP.get(obj.getKnm().trim());
+        for (NsNrule obj : nruleRepository.findAll()) {
+            List<NsNrule> nruleList = NS_NRULE_MAP.get(obj.getKnm().trim()) == null ? new ArrayList<>() : NS_NRULE_MAP.get(obj.getKnm().trim());
             nruleList.add(obj);
             NS_NRULE_MAP.put(obj.getKnm().trim(), nruleList);
         }
 
-        for (NsGrNmsg obj: grnmsgRepository.findAll()) {
+        for (NsGrNmsg obj : grnmsgRepository.findAll()) {
             NS_GRNMSG_MAP.put(obj.getKgr().trim(), obj);
         }
     }
 
-    public void processMessage(){
+    public void processMessage(String xml) {
 
 //        String xml = XMLExamples.SYSSTAT_XML;
 //        String xml = XMLExamples.ITEM_XML;
-        String xml = XMLExamples.TEST1_XML;
+//        String xml = XMLExamples.TEST1_XML;
 //        String xml = XMLExamples.PACKING_XML;
 
 
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder = null;
-        Document document = null;
         try {
-            builder = factory.newDocumentBuilder();
-            document = builder.parse(new ByteArrayInputStream(xml.getBytes()));
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = null;
+            Document document = null;
+            try {
+                builder = factory.newDocumentBuilder();
+                document = builder.parse(new ByteArrayInputStream(xml.getBytes()));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            String sender = document.getDocumentElement().getElementsByTagName("SENDER").item(0).getTextContent();
+            String msgType = document.getDocumentElement().getElementsByTagName("MSGTYPE").item(0).getTextContent();
+            String facility = document.getDocumentElement().getElementsByTagName("FACILITY").item(0).getTextContent();
+
+            /* получили искомый knm по которому будем брать нужные поля для валидации */
+            String knmMsg = findKnmMsg(sender, msgType);
+
+
+            List<String> errorList = validationService.validate(document, msgType, knmMsg);
+
+
+            /* Маршрутизация */
+
+            Map<String, Document> documentsForSend = new HashMap<>();
+
+            checkSender(sender, errorList);
+
+            try {
+                if (errorList.isEmpty()) {
+                    List<String> receivers = routingService.getListReceivers(document, facility, knmMsg, sender);
+                    documentsForSend = generateDocListWithReceivers(document, receivers);
+                }
+            } catch (Exception e){
+                errorList.add(e.getMessage());
+            }
+
+            if (!errorList.isEmpty()) {
+                Document docWithError = generateDocWithError(document, msgType, errorList);
+                documentsForSend.put(sender, docWithError);
+
+            }
+
+            routingService.sendDocuments(documentsForSend);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            log.error(e.toString(), e);
         }
-
-        String sender = document.getDocumentElement().getElementsByTagName("SENDER").item(0).getTextContent();
-        String msgType = document.getDocumentElement().getElementsByTagName("MSGTYPE").item(0).getTextContent();
-        String facility = document.getDocumentElement().getElementsByTagName("FACILITY").item(0).getTextContent();
-
-        /* получили искомый knm по которому будем брать нужные поля для валидации */
-        String knmMsg = findKnmMsg(sender, msgType);
-
-
-
-        List<String> errorList = validationService.validate(document, msgType, knmMsg);
-
-        System.out.println(errorList);
-
-        /* Маршрутизация */
-
-        Map<String, Document> documentsForSend = new HashMap<>();
-
-        if(!errorList.isEmpty()){
-            Document docWithError = generateDocWithError(document, msgType, errorList);
-            documentsForSend.put(sender, docWithError);
-
-        } else {
-            List<String> receivers = routingService.getListReceivers(document, facility, knmMsg, sender);
-            documentsForSend = generateDocListWithReceivers(document, receivers);
-        }
-
-        routingService.sendDocuments(documentsForSend);
-
-
 
     }
 
-    private Map<String, Document> generateDocListWithReceivers(Document doc, List<String> receivers){
+    private void checkSender(String sender,  List<String> errorList){
+        if(!NS_GRNMSG_MAP.containsKey(sender)){
+            errorList.add("Sender не прописан в правилах марштрутизации;");
+            throw new RuntimeException("Sender не прописан в правилах марштрутизации;");
+        }
+    }
 
-        Map<String, Document> documents = new HashMap<>();
+    private Map<String, Document> generateDocListWithReceivers(Document doc, List<String> receivers) {
 
-        for (String receiver: receivers) {
-            Document newDoc = (Document) doc.cloneNode(true);
-            newDoc.getElementsByTagName("SENDER").item(0).setTextContent("SERVER");
-            newDoc.getElementsByTagName("RECEIVER").item(0).setTextContent(receiver);
-            documents.put(receiver, newDoc);
+        try {
+            Map<String, Document> documents = new HashMap<>();
+
+            for (String receiver : receivers) {
+                Document newDoc = (Document) doc.cloneNode(true);
+                newDoc.getElementsByTagName("SENDER").item(0).setTextContent("SERVER");
+                newDoc.getElementsByTagName("RECEIVER").item(0).setTextContent(receiver);
+                documents.put(receiver, newDoc);
+            }
+
+            return documents;
+        } catch (Exception e) {
+            throw new XMLParsingException("Ошибка создания сообщений для отправки получателям, проверьте поля RECEIVER и SENDER;");
         }
 
-        return documents;
     }
 
-    private Document generateDocWithError(Document doc, String msgType, List<String> errorList){
+    private Document generateDocWithError(Document doc, String msgType, List<String> errorList) {
 
-        Document newDocument = (Document) doc.cloneNode(true);
-        removeChildsNode(newDocument, msgType);
-        Node rootNode = newDocument.getElementsByTagName("MESSAGE").item(0);
+        try {
 
-        Node sysstatNode = newDocument.createElement("SYSSTAT");
-        rootNode.appendChild(sysstatNode);
+            Document newDocument = (Document) doc.cloneNode(true);
+            removeChildsNode(newDocument, msgType);
+            Node rootNode = newDocument.getElementsByTagName("MESSAGE").item(0);
 
-        Node errorCodeNode = newDocument.createElement("ERROR_CODE");
-        Node descriptionNode = newDocument.createElement("DESCRIPTION");
+            Node sysstatNode = newDocument.createElement("SYSSTAT");
+            rootNode.appendChild(sysstatNode);
 
-        String msgId = newDocument.getElementsByTagName("MSGID").item(0).getTextContent();
-        newDocument.getElementsByTagName("REPLYTO").item(0).setTextContent(msgId);
+            Node errorCodeNode = newDocument.createElement("ERROR_CODE");
+            Node descriptionNode = newDocument.createElement("DESCRIPTION");
 
-        errorCodeNode.setTextContent("400");
-        descriptionNode.setTextContent(errorList.toString()
-                .replace("[", "")
-                .replace("]", "")
-                .trim());
+            String msgId = newDocument.getElementsByTagName("MSGID").item(0).getTextContent();
+            newDocument.getElementsByTagName("REPLYTO").item(0).setTextContent(msgId);
 
-        sysstatNode.appendChild(errorCodeNode);
-        sysstatNode.appendChild(descriptionNode);
+            errorCodeNode.setTextContent("400");
+            descriptionNode.setTextContent(errorList.toString()
+                    .replace("[", "")
+                    .replace("]", "")
+                    .trim());
 
-        return newDocument;
+            sysstatNode.appendChild(errorCodeNode);
+            sysstatNode.appendChild(descriptionNode);
+
+            return newDocument;
+
+        } catch (Exception e) {
+            throw new XMLParsingException("Ошибка создания сообщения с ошибкой;");
+        }
     }
 
 
-    private String findKnmMsg(String sender, String msgType){
+    private String findKnmMsg(String sender, String msgType) {
         return NS_NMSG_MAP.get(msgType).getKnm().trim();
     }
 
@@ -191,7 +219,7 @@ public class MessageService {
         }
     }
 
-    private void removeChildsNode(Document doc, String nodeName){
+    private void removeChildsNode(Document doc, String nodeName) {
         int countEl = doc.getElementsByTagName(nodeName).getLength();
         for (int i = 0; i < countEl; i++) {
             Node node = doc.getElementsByTagName(nodeName).item(0);

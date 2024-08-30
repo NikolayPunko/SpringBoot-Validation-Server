@@ -2,9 +2,9 @@ package com.host.SpringBootValidationServer.service;
 
 import com.host.SpringBootValidationServer.exceptions.UnknownFieldTypeException;
 import com.host.SpringBootValidationServer.model.NsNnode;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -13,7 +13,7 @@ import java.util.*;
 import static com.host.SpringBootValidationServer.service.MessageService.NS_NMSG_MAP;
 import static com.host.SpringBootValidationServer.service.MessageService.NS_NNODE_MAP;
 
-
+@Slf4j
 @Service
 public class ValidationService {
 
@@ -123,7 +123,7 @@ public class ValidationService {
                     return checkStrAsNumber(content, type);
                 }
                 else {
-                    throw new UnknownFieldTypeException(String.format("Unknown field type \"%s\"", type));
+                    throw new UnknownFieldTypeException(String.format("Неизвестный тип поля \"%s\"", type));
                 }
             }
         }

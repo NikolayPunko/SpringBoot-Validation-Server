@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- always a good activate OnConsoleStatusListener -->
+    <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener" />
+
+    <property name="LOGS" value="/projects/brz_valid_srv/logs" />
+
+    <appender name="Console"
+              class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>
+                %d{ISO8601} %green(%highlight(%-5level)) [%blue(%t)] %yellow(%logger{36}): %msg%n%throwable
+            </Pattern>
+        </layout>
+    </appender>
+
+    <appender name="APPFile" class="ch.qos.logback.core.FileAppender">
+        <file>${LOGS}/logger-SPRING.log</file>
+        <encoder>
+            <pattern>%d{ISO8601} %-5level %t %logger{36}: %msg%n%throwable</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="WEBFile" class="ch.qos.logback.core.FileAppender">
+        <file>${LOGS}/logger-WEB.log</file>
+        <encoder>
+            <pattern>%d{ISO8601} %-5level %t %logger{36}: %msg%n%throwable</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="DBFile" class="ch.qos.logback.core.FileAppender">
+        <file>${LOGS}/logger-DB.log</file>
+        <encoder>
+            <pattern>%d{ISO8601} %-5level %t %logger{36}: %msg%n%throwable</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="KAFKAFile" class="ch.qos.logback.core.FileAppender">
+        <file>${LOGS}/logger-KAFKA.log</file>
+        <encoder>
+            <pattern>%d{ISO8601} %-5level %t %logger{36}: %msg%n%throwable</pattern>
+        </encoder>
+    </appender>
+
+
+
+
+
+    <!-- LOG everything at INFO level -->
+    <root level="info">
+        <appender-ref ref="Console" />
+        <appender-ref ref="APPFile" />
+    </root>
+
+
+
+    <!-- org.springframework.web -->
+
+    <logger name="org.springframework.web" level="debug" additivity="false">
+        <appender-ref ref="WEBFile" />
+        <!--        <appender-ref ref="Console" />-->
+    </logger>
+
+
+    <!-- org.hibernate -->
+    <logger name="org.hibernate" level="info" additivity="false">
+        <appender-ref ref="DBFile" />
+<!--        <appender-ref ref="Console" />-->
+    </logger>
+
+
+
+
+    <logger name="org.springframework.kafka" level="debug" additivity="false">
+        <appender-ref ref="Console" />
+    </logger>
+
+    <logger name="org.springframework.kafka.core" level="trace" additivity="false">
+        <appender-ref ref="KAFKAFile" />
+    </logger>
+
+
+
+
+
+</configuration>
