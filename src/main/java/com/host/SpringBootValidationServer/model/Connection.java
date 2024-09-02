@@ -12,5 +12,6 @@ public class Connection {
     private String type;
     private String topic;
     private String url;
+    private String bearer;
 
 }

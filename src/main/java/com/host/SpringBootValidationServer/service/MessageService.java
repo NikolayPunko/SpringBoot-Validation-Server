@@ -82,7 +82,7 @@ public class MessageService {
 
 //        String xml = XMLExamples.SYSSTAT_XML;
 //        String xml = XMLExamples.ITEM_XML;
-//        String xml = XMLExamples.TEST1_XML;
+//          xml = XMLExamples.TEST1_XML;
 //        String xml = XMLExamples.PACKING_XML;
 
 
@@ -129,7 +129,7 @@ public class MessageService {
 
             }
 
-            routingService.sendDocuments(documentsForSend);
+            routingService.sendDocuments(documentsForSend, facility);
         } catch (Exception e) {
             log.error(e.toString(), e);
         }
@@ -151,7 +151,7 @@ public class MessageService {
             for (String receiver : receivers) {
                 Document newDoc = (Document) doc.cloneNode(true);
                 newDoc.getElementsByTagName("SENDER").item(0).setTextContent("SERVER");
-                newDoc.getElementsByTagName("RECEIVER").item(0).setTextContent(receiver);
+                newDoc.getElementsByTagName("RECIEVER").item(0).setTextContent(receiver);
                 documents.put(receiver, newDoc);
             }
 

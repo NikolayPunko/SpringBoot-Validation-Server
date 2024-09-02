@@ -57,7 +57,8 @@ public class RoutingService {
         return receiverList;
     }
 
-    public void sendDocuments(Map<String, Document> documents) {
+    public void sendDocuments(Map<String, Document> documents, String facility) {
+
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES);
@@ -70,24 +71,42 @@ public class RoutingService {
             try {
                 connection = objectMapper.readValue(obj.getConnection(), Connection.class);
             } catch (JsonProcessingException e) {
-                throw new RuntimeException("Сообщение не прописано в правилах маршрутизации!");
+                throw new RuntimeException("Ошибка сопоставления со справочником NS_GRNMSG!");
             }
 
-            if(connection.getType().trim().equalsIgnoreCase("API")){
-//                sendToHttp(convertDOMXMLtoString(entry.getValue()), connection.getUrl());
-            } else if(connection.getType().trim().equalsIgnoreCase("Kafka")){
+            if (connection.getType().trim().equalsIgnoreCase("API")) {
+
+                if (!facility.equalsIgnoreCase("NAS") && !facility.equalsIgnoreCase("HOST")) {
+//                    sendToHttp(convertDOMXMLtoString(entry.getValue()), connection.getUrl(), connection.getBearer());
+                    System.out.println("Отправили по Http");
+                } else {
+                    log.info("Отработала заглушка!");
+                }
+
+            } else if (connection.getType().trim().equalsIgnoreCase("Kafka")) {
+
+                if (!facility.equalsIgnoreCase("NAS") && !facility.equalsIgnoreCase("HOST")) {
 //                sendToKafka(convertDOMXMLtoString(entry.getValue()), connection.getTopic());
-                System.out.println(convertDOMXMLtoString(entry.getValue()));
+                    System.out.println("Отправили в Kafka");
+                    System.out.println(convertDOMXMLtoString(entry.getValue()));
+                } else {
+                    log.info("Отработала заглушка!");
+                }
+
+
             }
 
         }
 
         log.info("Сообщение успешно обработано!");
+
+
     }
 
-    private void sendToHttp(String message, String url){
+    private void sendToHttp(String message, String url, String bearer) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_XML);
+        headers.setBearerAuth(bearer);
         HttpEntity<String> request = new HttpEntity<>(message, headers);
 
         try {
@@ -98,7 +117,7 @@ public class RoutingService {
 
     }
 
-    private void sendToKafka(String message, String topic){
+    private void sendToKafka(String message, String topic) {
         kafkaService.sendMessage(message, topic);
     }
 

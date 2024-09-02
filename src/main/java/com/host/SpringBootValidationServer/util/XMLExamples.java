@@ -11,7 +11,7 @@ public class XMLExamples {
             + "<FACILITY>NAS</FACILITY>"
             + "<ACTION>SET</ACTION>"
             + "<SENDER>HOST</SENDER>"
-            + "<RECEIVER>NAS</RECEIVER>"
+            + "<RECIEVER>NAS</RECIEVER>"
             + "<SYSSTAT>"
             + "<ERROR_CODE>200</ERROR_CODE>"
             + "<DESCRIPTION>ok</DESCRIPTION>"
@@ -31,7 +31,7 @@ public class XMLExamples {
             "    <FACILITY>NAS</FACILITY>\n" +
             "    <ACTION>SET</ACTION>\n" +
             "    <SENDER>HOST</SENDER>\n" +
-            "    <RECEIVER>NAS</RECEIVER>\n" +
+            "    <RECIEVER>NAS</RECIEVER>\n" +
             "    <ITEM>\n" +
             "        <ITEM_ID>0204210168</ITEM_ID>\n" +
             "        <BASIC_UOM>PCE</BASIC_UOM>\n" +
@@ -80,7 +80,7 @@ public class XMLExamples {
             "<FACILITY>TEST1</FACILITY>\n" +
             "<ACTION>SET</ACTION>\n" +
             "<SENDER>HOST</SENDER>\n" +
-            "<RECEIVER>TEST1</RECEIVER>\n" +
+            "<RECIEVER>TEST1</RECIEVER>\n" +
             "<SYSSTAT>\n" +
             "<ERROR_CODE>0</ERROR_CODE>\n" +
             "<DESCRIPTION>ok</DESCRIPTION>\n" +
@@ -97,7 +97,7 @@ public class XMLExamples {
             "       <FACILITY></FACILITY>\n" +
             "       <ACTION>SET</ACTION>\n" +
             "       <SENDER>HOST</SENDER>\n" +
-            "       <RECEIVER>NAS</RECEIVER>\n" +
+            "       <RECIEVER>NAS</RECIEVER>\n" +
             "         <ITEM>\n" +
             "           <ITEM_ID>0307060137</ITEM_ID>\n" +
             "           <ITEM_REF>3937</ITEM_REF>\n" +
