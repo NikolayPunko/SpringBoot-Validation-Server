@@ -80,12 +80,6 @@ public class MessageService {
 
     public void processMessage(String xml) {
 
-//        String xml = XMLExamples.SYSSTAT_XML;
-//        String xml = XMLExamples.ITEM_XML;
-//          xml = XMLExamples.TEST1_XML;
-//        String xml = XMLExamples.PACKING_XML;
-
-
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = null;

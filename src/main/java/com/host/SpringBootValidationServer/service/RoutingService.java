@@ -74,26 +74,28 @@ public class RoutingService {
                 throw new RuntimeException("Ошибка сопоставления со справочником NS_GRNMSG!");
             }
 
+            String msg = convertDOMXMLtoString(entry.getValue());
+
             if (connection.getType().trim().equalsIgnoreCase("API")) {
 
                 if (!facility.equalsIgnoreCase("NAS") && !facility.equalsIgnoreCase("HOST")) {
-//                    sendToHttp(convertDOMXMLtoString(entry.getValue()), connection.getUrl(), connection.getBearer());
-                    System.out.println("Отправили по Http");
+                    sendToHttp(msg, connection.getUrl(), connection.getBearer());
+                    log.info("Отправили по Http '{}': \n {}", connection.getUrl(), msg);
                 } else {
-                    log.info("Отработала заглушка!");
+                    log.info("Отработала заглушка, Http '{}': \n {}", connection.getUrl(), msg);
                 }
 
             } else if (connection.getType().trim().equalsIgnoreCase("Kafka")) {
 
                 if (!facility.equalsIgnoreCase("NAS") && !facility.equalsIgnoreCase("HOST")) {
-//                sendToKafka(convertDOMXMLtoString(entry.getValue()), connection.getTopic());
-                    System.out.println("Отправили в Kafka");
-                    System.out.println(convertDOMXMLtoString(entry.getValue()));
+                sendToKafka(msg, connection.getTopic());
+                    log.info("Отправили в Kafka '{}': \n {}", connection.getTopic(), msg);
                 } else {
-                    log.info("Отработала заглушка!");
+                    log.info("Отработала заглушка, Kafka '{}': \n {}", connection.getTopic(), msg);
                 }
 
-
+            } else {
+                log.error("Тип маршрутизации {} не определен!", connection.getType().trim());
             }
 
         }

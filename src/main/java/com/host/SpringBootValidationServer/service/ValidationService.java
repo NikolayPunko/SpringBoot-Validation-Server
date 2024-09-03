@@ -109,7 +109,8 @@ public class ValidationService {
             case "INTEGER" -> {
                 return checkStrAsInteger(content);
             }
-            case "DATETIME" -> {}
+
+            case "DATETIME" -> {} //доделать валидацию даты
             case "Y/N" -> {
                 return checkStrAsBool(content);
             }
@@ -128,8 +129,7 @@ public class ValidationService {
             }
         }
 
-//        return false;
-        return true;
+        return false;
     }
 
     private boolean checkStrAsInteger(String content) {
