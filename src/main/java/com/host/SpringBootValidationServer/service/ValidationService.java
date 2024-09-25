@@ -2,12 +2,14 @@ package com.host.SpringBootValidationServer.service;
 
 import com.host.SpringBootValidationServer.exceptions.UnknownFieldTypeException;
 import com.host.SpringBootValidationServer.model.NsNnode;
+import com.host.SpringBootValidationServer.util.DateUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 import static com.host.SpringBootValidationServer.service.MessageService.NS_NMSG_MAP;
@@ -109,8 +111,9 @@ public class ValidationService {
             case "INTEGER" -> {
                 return checkStrAsInteger(content);
             }
-
-            case "DATETIME" -> {} //доделать валидацию даты
+            case "DATETIME" -> {
+                checkStrAsDateTime(content);
+            }
             case "Y/N" -> {
                 return checkStrAsBool(content);
             }
@@ -169,11 +172,14 @@ public class ValidationService {
         return content.length() <= permittedLength;
     }
 
-    private boolean checkStrAsDateTime(String content) {
-//        String str = "20240807151118";
-//        String date = LocalDateTime.parse(str).format(DateUtils.DATE_FORMAT);
+    public static boolean checkStrAsDateTime(String content) {
+        try {
+            LocalDateTime localDateTime = LocalDateTime.parse(content, DateUtils.DATE_FORMAT);
+            return true;
+        } catch (Exception e){
+            return false;
+        }
 
-        return false;
     }
 
     private boolean checkStrAsBool(String content) {
