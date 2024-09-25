@@ -88,7 +88,7 @@ public class RoutingService {
             } else if (connection.getType().trim().equalsIgnoreCase("Kafka")) {
 
                 if (!facility.equalsIgnoreCase("NAS") && !facility.equalsIgnoreCase("HOST")) {
-                sendToKafka(msg, connection.getTopic());
+                    sendToKafka(msg, connection.getTopic());
                     log.info("Отправили в Kafka '{}': \n {}", connection.getTopic(), msg);
                 } else {
                     log.info("Отработала заглушка, Kafka '{}': \n {}", connection.getTopic(), msg);
