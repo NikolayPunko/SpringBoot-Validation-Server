@@ -72,11 +72,11 @@
 
 
 
-    <logger name="org.springframework.kafka" level="debug" additivity="false">
+    <logger name="org.springframework.kafka" level="info" additivity="false">
         <appender-ref ref="Console" />
     </logger>
 
-    <logger name="org.springframework.kafka.core" level="trace" additivity="false">
+    <logger name="org.springframework.kafka.core" level="info" additivity="false">
         <appender-ref ref="KAFKAFile" />
     </logger>
 

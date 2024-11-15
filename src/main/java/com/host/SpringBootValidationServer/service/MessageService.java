@@ -190,7 +190,7 @@ public class MessageService {
     }
 
 
-    private String findKnmMsg(String sender, String msgType) {
+    public String findKnmMsg(String sender, String msgType) {
         return NS_NMSG_MAP.get(msgType).getKnm().trim();
     }
 
