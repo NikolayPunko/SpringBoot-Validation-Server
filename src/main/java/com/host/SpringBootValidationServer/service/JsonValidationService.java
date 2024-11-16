@@ -23,7 +23,7 @@ public class JsonValidationService {
     public List<String> validate(JsonNode msgNode, String msgType, String knmMsg) {
 
         List<JsonNode> msgTypesElements = msgNode.findValues(msgType);
-        JsonNode jsonNode = msgNode.findValue(msgType);
+//        JsonNode jsonNode = msgNode.findValue(msgType);
 
 
         ArrayList<String> errorList = new ArrayList<>();
@@ -36,9 +36,17 @@ public class JsonValidationService {
 
     private void validateNodes(List<JsonNode> msgTypesElements, List<String> errorList, String knmMsg) {
 
+        int counter;
 
+        if (msgTypesElements.get(0).isArray()){
+            counter  = msgTypesElements.get(0).size();
+        } else if (msgTypesElements.get(0).isObject()){
+            counter = 1;
+        } else {
+            throw new RuntimeException("MsgTypesElements type not found!");
+        }
 
-        for (int i = 0; i < msgTypesElements.get(0).size(); i++) {
+        for (int i = 0; i < counter; i++) {
             System.out.println("msgTypesElements.get(0).size()");
 
             /* словарь заполнения обязательных полей для одного блока msgType */

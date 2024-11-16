@@ -130,7 +130,7 @@ public class MessageService {
 
     }
 
-    private void checkSender(String sender,  List<String> errorList){
+    public void checkSender(String sender,  List<String> errorList){
         if(!NS_GRNMSG_MAP.containsKey(sender)){
             errorList.add("Sender не прописан в правилах марштрутизации;");
             throw new RuntimeException("Sender не прописан в правилах марштрутизации;");
@@ -185,7 +185,7 @@ public class MessageService {
             return newDocument;
 
         } catch (Exception e) {
-            throw new XMLParsingException("Ошибка создания сообщения с ошибкой;");
+            throw new XMLParsingException("Ошибка создания сообщения с ошибкой  в формате XML;");
         }
     }
 
