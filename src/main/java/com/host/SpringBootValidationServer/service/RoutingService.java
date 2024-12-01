@@ -13,7 +13,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.w3c.dom.Document;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,37 +33,13 @@ public class RoutingService {
     }
 
 
-    public List<String> getListReceivers(Document document, String facility, String knmMsg, String sender) {
-
-        List<String> receiverList = new ArrayList<>();
-
-        boolean isValidMsg = false;
-
-        for (NsNrule x : NS_NRULE_MAP.get(knmMsg)) {
-            if (x.getFacility().trim().equalsIgnoreCase(facility)) {
-                if (x.getSender().trim().equalsIgnoreCase(sender)) {
-                    isValidMsg = true;
-                }
-
-                receiverList.add(x.getReceiver().trim());
-            }
-        }
-
-        if (!isValidMsg) {
-            throw new RuntimeException("Cообщение не прописано в правилах маршрутизации!");
-        }
-
-        return receiverList;
-    }
-
-    public void sendDocuments(Map<String, Document> documents, String facility) {
-
+    public void sendDocuments(Map<String, String> documents, String facility) {
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES);
 
 
-        for (Map.Entry<String, Document> entry : documents.entrySet()) {
+        for (Map.Entry<String, String> entry : documents.entrySet()) {
             NsGrNmsg obj = NS_GRNMSG_MAP.get(entry.getKey());
 
             Connection connection = null;
@@ -74,24 +49,24 @@ public class RoutingService {
                 throw new RuntimeException("Ошибка сопоставления со справочником NS_GRNMSG!");
             }
 
-            String msg = convertDOMXMLtoString(entry.getValue());
+            String msg = entry.getValue();
 
             if (connection.getType().trim().equalsIgnoreCase("API")) {
 
                 if (!facility.equalsIgnoreCase("NAS") && !facility.equalsIgnoreCase("HOST")) {
+                    log.info("Отработала заглушка, Http '{}': \n {}", connection.getUrl(), msg);
+                } else {
                     sendToHttp(msg, connection.getUrl(), connection.getBearer());
                     log.info("Отправили по Http '{}': \n {}", connection.getUrl(), msg);
-                } else {
-                    log.info("Отработала заглушка, Http '{}': \n {}", connection.getUrl(), msg);
                 }
 
             } else if (connection.getType().trim().equalsIgnoreCase("Kafka")) {
 
                 if (!facility.equalsIgnoreCase("NAS") && !facility.equalsIgnoreCase("HOST")) {
+                    log.info("Отработала заглушка, Kafka '{}': \n {}", connection.getTopic(), msg);
+                } else {
                     sendToKafka(msg, connection.getTopic());
                     log.info("Отправили в Kafka '{}': \n {}", connection.getTopic(), msg);
-                } else {
-                    log.info("Отработала заглушка, Kafka '{}': \n {}", connection.getTopic(), msg);
                 }
 
             } else {

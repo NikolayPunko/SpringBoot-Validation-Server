@@ -9,29 +9,29 @@ import org.springframework.stereotype.Service;
 @Service
 public class KafkaListenerService {
 
-    private final MessageService messageService;
+    private final XmlService xmlService;
 
     @Autowired
-    public KafkaListenerService(MessageService messageService) {
-        this.messageService = messageService;
+    public KafkaListenerService(XmlService xmlService) {
+        this.xmlService = xmlService;
     }
 
     @KafkaListener(topics = "nhtest", groupId = "validServer1")
     void listener1(String data) {
         log.info("Прослушано сообщение из топика nhtest  - {}", data);
-        messageService.processMessage(data);
+        xmlService.processMessage(data);
     }
 
     @KafkaListener(topics = "NasToHost", groupId = "validServer1")
     void listener2(String data) {
         log.info("Прослушано сообщение из топика NasToHost  - {}", data);
-        messageService.processMessage(data);
+        xmlService.processMessage(data);
     }
 
     @KafkaListener(topics = "HostToNas", groupId = "validServer1")
     void listener3(String data) {
         log.info("Прослушано сообщение из топика HostToNas - {}", data);
-        messageService.processMessage(data);
+        xmlService.processMessage(data);
     }
 
 

@@ -1,6 +1,5 @@
 package com.host.SpringBootValidationServer.service;
 
-import com.host.SpringBootValidationServer.exceptions.XMLParsingException;
 import com.host.SpringBootValidationServer.model.NsGrNmsg;
 import com.host.SpringBootValidationServer.model.NsNmsg;
 import com.host.SpringBootValidationServer.model.NsNnode;
@@ -9,24 +8,10 @@ import com.host.SpringBootValidationServer.repositories.GRNMSGRepository;
 import com.host.SpringBootValidationServer.repositories.NMSGRepository;
 import com.host.SpringBootValidationServer.repositories.NNODERepository;
 import com.host.SpringBootValidationServer.repositories.NRULERepository;
-import com.host.SpringBootValidationServer.util.XMLExamples;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import java.io.ByteArrayInputStream;
-import java.io.StringWriter;
 import java.util.*;
 
 @Slf4j
@@ -38,17 +23,14 @@ public class MessageService {
     public static Map<String, List<NsNrule>> NS_NRULE_MAP = new HashMap<>();
     public static Map<String, NsGrNmsg> NS_GRNMSG_MAP = new HashMap<>();
 
-    private final ValidationService validationService;
-    private final RoutingService routingService;
+
     private final NMSGRepository nmsgRepository;
     private final NNODERepository nnodeRepository;
     private final NRULERepository nruleRepository;
     private final GRNMSGRepository grnmsgRepository;
 
     @Autowired
-    public MessageService(ValidationService validationService, RoutingService routingService, NMSGRepository nmsgRepository, NNODERepository nnodeRepository, NRULERepository nruleRepository, GRNMSGRepository grnmsgRepository) {
-        this.validationService = validationService;
-        this.routingService = routingService;
+    public MessageService(NMSGRepository nmsgRepository, NNODERepository nnodeRepository, NRULERepository nruleRepository, GRNMSGRepository grnmsgRepository) {
         this.nmsgRepository = nmsgRepository;
         this.nnodeRepository = nnodeRepository;
         this.nruleRepository = nruleRepository;
@@ -78,58 +60,6 @@ public class MessageService {
         }
     }
 
-    public void processMessage(String xml) {
-
-        try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder builder = null;
-            Document document = null;
-            try {
-                builder = factory.newDocumentBuilder();
-                document = builder.parse(new ByteArrayInputStream(xml.getBytes()));
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-
-            String sender = document.getDocumentElement().getElementsByTagName("SENDER").item(0).getTextContent();
-            String msgType = document.getDocumentElement().getElementsByTagName("MSGTYPE").item(0).getTextContent();
-            String facility = document.getDocumentElement().getElementsByTagName("FACILITY").item(0).getTextContent();
-
-            /* получили искомый knm по которому будем брать нужные поля для валидации */
-            String knmMsg = findKnmMsg(sender, msgType);
-
-
-            List<String> errorList = validationService.validate(document, msgType, knmMsg);
-
-
-            /* Маршрутизация */
-
-            Map<String, Document> documentsForSend = new HashMap<>();
-
-            checkSender(sender, errorList);
-
-            try {
-                if (errorList.isEmpty()) {
-                    List<String> receivers = routingService.getListReceivers(document, facility, knmMsg, sender);
-                    documentsForSend = generateDocListWithReceivers(document, receivers);
-                }
-            } catch (Exception e){
-                errorList.add(e.getMessage());
-            }
-
-            if (!errorList.isEmpty()) {
-                Document docWithError = generateDocWithError(document, msgType, errorList);
-                documentsForSend.put(sender, docWithError);
-
-            }
-
-            routingService.sendDocuments(documentsForSend, facility);
-        } catch (Exception e) {
-            log.error(e.toString(), e);
-        }
-
-    }
-
     public void checkSender(String sender,  List<String> errorList){
         if(!NS_GRNMSG_MAP.containsKey(sender)){
             errorList.add("Sender не прописан в правилах марштрутизации;");
@@ -137,89 +67,35 @@ public class MessageService {
         }
     }
 
-    private Map<String, Document> generateDocListWithReceivers(Document doc, List<String> receivers) {
-
-        try {
-            Map<String, Document> documents = new HashMap<>();
-
-            for (String receiver : receivers) {
-                Document newDoc = (Document) doc.cloneNode(true);
-                newDoc.getElementsByTagName("SENDER").item(0).setTextContent("SERVER");
-                newDoc.getElementsByTagName("RECIEVER").item(0).setTextContent(receiver);
-                documents.put(receiver, newDoc);
-            }
-
-            return documents;
-        } catch (Exception e) {
-            throw new XMLParsingException("Ошибка создания сообщений для отправки получателям, проверьте поля RECEIVER и SENDER;");
-        }
-
-    }
-
-    private Document generateDocWithError(Document doc, String msgType, List<String> errorList) {
-
-        try {
-
-            Document newDocument = (Document) doc.cloneNode(true);
-            removeChildsNode(newDocument, msgType);
-            Node rootNode = newDocument.getElementsByTagName("MESSAGE").item(0);
-
-            Node sysstatNode = newDocument.createElement("SYSSTAT");
-            rootNode.appendChild(sysstatNode);
-
-            Node errorCodeNode = newDocument.createElement("ERROR_CODE");
-            Node descriptionNode = newDocument.createElement("DESCRIPTION");
-
-            String msgId = newDocument.getElementsByTagName("MSGID").item(0).getTextContent();
-            newDocument.getElementsByTagName("REPLYTO").item(0).setTextContent(msgId);
-
-            errorCodeNode.setTextContent("400");
-            descriptionNode.setTextContent(errorList.toString()
-                    .replace("[", "")
-                    .replace("]", "")
-                    .trim());
-
-            sysstatNode.appendChild(errorCodeNode);
-            sysstatNode.appendChild(descriptionNode);
-
-            return newDocument;
-
-        } catch (Exception e) {
-            throw new XMLParsingException("Ошибка создания сообщения с ошибкой  в формате XML;");
-        }
-    }
-
-
-    public String findKnmMsg(String sender, String msgType) {
+    public String findKnmMsg(String msgType) {
         return NS_NMSG_MAP.get(msgType).getKnm().trim();
     }
 
-    public static String convertDOMXMLtoString(Document doc) {
-        try {
-            TransformerFactory tFactory = TransformerFactory.newInstance();
-            Transformer transformer = tFactory.newTransformer();
+    public List<String> getListReceivers(String facility, String knmMsg, String sender) {
 
-            transformer.setOutputProperty(OutputKeys.METHOD, "xml");
-//            transformer.setOutputProperty( OutputKeys.INDENT, "yes" ); //выравнивание
-            transformer.setOutputProperty("encoding", "UTF-8");
+        List<String> receiverList = new ArrayList<>();
 
-            DOMSource source = new DOMSource(doc);
-            StringWriter sw = new StringWriter();
-            StreamResult result = new StreamResult(sw);
-            transformer.transform(source, result);
-            return sw.toString();
-        } catch (TransformerException e) {
-            throw new XMLParsingException("Не удалось распарсить xml файл!");
+        boolean isValidMsg = false;
+
+        for (NsNrule x : NS_NRULE_MAP.get(knmMsg)) {
+            if (x.getFacility().trim().equalsIgnoreCase(facility)) {
+                if (x.getSender().trim().equalsIgnoreCase(sender)) {
+                    isValidMsg = true;
+                }
+
+                receiverList.add(x.getReceiver().trim());
+            }
         }
+
+        if (!isValidMsg) {
+            throw new RuntimeException("Cообщение не прописано в правилах маршрутизации!");
+        }
+
+        return receiverList;
     }
 
-    private void removeChildsNode(Document doc, String nodeName) {
-        int countEl = doc.getElementsByTagName(nodeName).getLength();
-        for (int i = 0; i < countEl; i++) {
-            Node node = doc.getElementsByTagName(nodeName).item(0);
-            node.getParentNode().removeChild(node);
-        }
-        doc.normalize();
-    }
+
+
+
 
 }

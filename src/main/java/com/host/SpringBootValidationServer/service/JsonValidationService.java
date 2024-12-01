@@ -7,24 +7,23 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 
+import static com.host.SpringBootValidationServer.service.MessageService.NS_NMSG_MAP;
 import static com.host.SpringBootValidationServer.service.MessageService.NS_NNODE_MAP;
 
 @Service
 public class JsonValidationService {
 
-    private final ValidationService validationService;
+    private final XmlValidationService xmlValidationService;
 
     @Autowired
-    public JsonValidationService(ValidationService validationService) {
-        this.validationService = validationService;
+    public JsonValidationService(XmlValidationService xmlValidationService) {
+        this.xmlValidationService = xmlValidationService;
     }
 
 
     public List<String> validate(JsonNode msgNode, String msgType, String knmMsg) {
 
         List<JsonNode> msgTypesElements = msgNode.findValues(msgType);
-//        JsonNode jsonNode = msgNode.findValue(msgType);
-
 
         ArrayList<String> errorList = new ArrayList<>();
 
@@ -47,7 +46,6 @@ public class JsonValidationService {
         }
 
         for (int i = 0; i < counter; i++) {
-            System.out.println("msgTypesElements.get(0).size()");
 
             /* словарь заполнения обязательных полей для одного блока msgType */
             Map<String, Boolean> requiredFields = new HashMap<>();
@@ -75,8 +73,6 @@ public class JsonValidationService {
             while (fieldNames.hasNext()) {
                 String fieldName = fieldNames.next();
                 JsonNode fieldMsgType = msgTypeNode.get(fieldName);
-                System.out.println("Field: " + fieldName + ", Value: " + fieldMsgType);
-
 
                 Optional<NsNnode> optionalNsNnode = NS_NNODE_MAP.get(knmMsg).stream()
                         .filter(x -> x.getKnm().trim().equals(knmMsg) && fieldName.equalsIgnoreCase(x.getNode().trim()))
@@ -95,8 +91,15 @@ public class JsonValidationService {
 
 
                 if (x.getType().trim().endsWith("[]")) {
-//                    String knm = NS_NMSG_MAP.get(x.getType().trim().substring(0, x.getType().trim().length() - 2)).getKnm().trim();
-//                    validateNodes(node.getChildNodes(), errorList, knm);
+                    String arrField = x.getType().trim().substring(0, x.getType().trim().length()-2);
+                    String knm = NS_NMSG_MAP.get(x.getType().trim().substring(0, x.getType().trim().length() - 2)).getKnm().trim();
+
+                    try {
+                        validateNodes(fieldMsgType.findValues(arrField), errorList, knm);
+                    } catch (Exception e){
+                        errorList.add(String.format("Ошибка в блоке %s поле %s не найдено", x.getNode().trim(), arrField));
+                        continue;
+                    }
 
                 } else {
 
@@ -108,7 +111,7 @@ public class JsonValidationService {
                     }
 
 
-                    boolean result = validationService.validateFieldByType(fieldMsgType.asText(), x.getType().trim());
+                    boolean result = xmlValidationService.validateFieldByType(fieldMsgType.asText(), x.getType().trim());
 
                     if (!result) {
                         errorList.add(String.format("Ошибка в блоке %s поле %s несоответствие типу", "SYSSTAT", fieldName));
@@ -126,14 +129,9 @@ public class JsonValidationService {
                 }
             }
 
-            System.out.println("End.");
-
-
-
 
         }
 
-        System.out.println(errorList);
     }
 
 }

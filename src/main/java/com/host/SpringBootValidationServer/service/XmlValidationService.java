@@ -17,7 +17,7 @@ import static com.host.SpringBootValidationServer.service.MessageService.NS_NNOD
 
 @Slf4j
 @Service
-public class ValidationService {
+public class XmlValidationService {
 
 
     public List<String> validate(Document document, String msgType, String knmMsg) {

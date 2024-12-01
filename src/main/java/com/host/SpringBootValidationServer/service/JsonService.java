@@ -5,14 +5,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.host.SpringBootValidationServer.exceptions.XMLParsingException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 public class JsonService {
 
@@ -20,65 +21,97 @@ public class JsonService {
 
     private final JsonValidationService jsonValidationService;
 
-    public JsonService(MessageService messageService, JsonValidationService jsonValidationService) {
+    private final RoutingService routingService;
+
+    public JsonService(MessageService messageService, JsonValidationService jsonValidationService, RoutingService routingService) {
         this.messageService = messageService;
         this.jsonValidationService = jsonValidationService;
+        this.routingService = routingService;
     }
 
 
     public void processJsonMessage(String json) {
 
-        ObjectMapper jsonMapper = new ObjectMapper();
-
-        JsonNode jsonNode = null;
         try {
-            jsonNode = jsonMapper.readTree(json);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
 
-        JsonNode msgNode = jsonNode.get("MESSAGE");
+            ObjectMapper jsonMapper = new ObjectMapper();
+            List<String> errorList = new ArrayList<>();
 
-        String sender = msgNode.get("SENDER").asText();
-        String msgType = msgNode.get("MSGTYPE").asText();
-        String facility = msgNode.get("FACILITY").asText();
-
-        /* получили искомый knm по которому будем брать нужные поля для валидации */
-        String knmMsg = messageService.findKnmMsg(sender, msgType);
-
-        /* валидация */
-
-        List<String> errorList = jsonValidationService.validate(msgNode, msgType, knmMsg);
-
-
-        /* Маршрутизация */
-
-        Map<String, JsonNode> documentsForSend = new HashMap<>();
-
-        messageService.checkSender(sender, errorList);
-
-        try {
-            if (errorList.isEmpty()) {
-//                List<String> receivers = routingService.getListReceivers(document, facility, knmMsg, sender);
-//                documentsForSend = generateDocListWithReceivers(document, receivers);
+            JsonNode jsonNode = null;
+            try {
+                jsonNode = jsonMapper.readTree(json);
+            } catch (JsonProcessingException e) {
+                errorList.add("Не удалось распарсить JSON сообщение, проверьте синтаксис.");
+                log.error("Не удалось распарсить JSON сообщение, проверьте синтаксис.");
             }
-        } catch (Exception e){
-            errorList.add(e.getMessage());
+
+            JsonNode msgNode = jsonNode.get("MESSAGE");
+
+            String sender = msgNode.get("SENDER").asText();
+            String msgType = msgNode.get("MSGTYPE").asText();
+            String facility = msgNode.get("FACILITY").asText();
+
+            /* получили искомый knm по которому будем брать нужные поля для валидации */
+            String knmMsg = messageService.findKnmMsg(msgType);
+
+            /* валидация */
+
+            errorList = jsonValidationService.validate(msgNode, msgType, knmMsg);
+
+
+            /* маршрутизация */
+
+            Map<String, String> documentsForSend = new HashMap<>();
+
+            messageService.checkSender(sender, errorList);
+
+            try {
+                if (errorList.isEmpty()) {
+                    List<String> receivers = messageService.getListReceivers(facility, knmMsg, sender);
+                    documentsForSend = generateDocListWithReceivers(msgNode, receivers);
+                    System.out.println();
+                }
+            } catch (Exception e) {
+                errorList.add(e.getMessage());
+            }
+
+            if (!errorList.isEmpty()) {
+                String docWithError = generateDocWithError(msgNode, msgType, errorList);
+                documentsForSend.put(sender, docWithError);
+            }
+
+            routingService.sendDocuments(documentsForSend, facility);
+
+
+            System.out.println("end.");
+        } catch (Exception e) {
+            log.error(e.toString(), e);
         }
-
-        if (!errorList.isEmpty()) {
-            JsonNode docWithError = generateDocWithError(msgNode, msgType, errorList);
-            documentsForSend.put(sender, docWithError);
-
-        }
-
-//        routingService.sendDocuments(documentsForSend, facility);
-
-
-        System.out.println("end.");
     }
 
-    private JsonNode generateDocWithError(JsonNode msgNode, String msgType, List<String> errorList) {
+    private Map<String, String> generateDocListWithReceivers(JsonNode msgNode, List<String> receivers) {
+
+        try {
+            Map<String, String> documents = new HashMap<>();
+
+            for (String receiver : receivers) {
+                ObjectMapper objectMapper = new ObjectMapper();
+                ObjectNode newDoc = msgNode.deepCopy();
+                newDoc.put("SENDER", "SERVER");
+                newDoc.put("RECIEVER", receiver);
+
+                String stringJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(newDoc);
+                documents.put(receiver, stringJson);
+            }
+
+            return documents;
+        } catch (Exception e) {
+            throw new XMLParsingException("Ошибка создания сообщений для отправки получателям, проверьте поля RECEIVER и SENDER;");
+        }
+
+    }
+
+    private String generateDocWithError(JsonNode msgNode, String msgType, List<String> errorList) {
 
         try {
             ObjectMapper objectMapper = new ObjectMapper();
@@ -96,17 +129,15 @@ public class JsonService {
             objectNode.set("SYSSTAT", sysstatNode);
             objectNode.put("REPLYTO", objectNode.get("MSGID").asLong());
 
-            String updatedJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(objectNode);
-            System.out.println(updatedJson);
-
-            return objectNode;
+            String stringJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(objectNode);
+            System.out.println(stringJson);
+            return stringJson;
 
         } catch (Exception e) {
             e.printStackTrace();
             throw new XMLParsingException("Ошибка создания сообщения с ошибкой в формате JSON;");
         }
     }
-
 
 
 }

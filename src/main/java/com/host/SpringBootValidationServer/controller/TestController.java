@@ -1,8 +1,8 @@
 package com.host.SpringBootValidationServer.controller;
 
 import com.host.SpringBootValidationServer.service.JsonService;
-import com.host.SpringBootValidationServer.service.MessageService;
 import com.host.SpringBootValidationServer.service.TestService;
+import com.host.SpringBootValidationServer.service.XmlService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -15,15 +15,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class TestController {
 
-    private final MessageService messageService;
-
+    private final XmlService xmlService;
     private final TestService testService;
-
     private final JsonService jsonService;
 
     @Autowired
-    public TestController(MessageService messageService, TestService testService, JsonService jsonService) {
-        this.messageService = messageService;
+    public TestController(XmlService xmlService, TestService testService, JsonService jsonService) {
+        this.xmlService = xmlService;
         this.testService = testService;
         this.jsonService = jsonService;
     }
@@ -31,7 +29,7 @@ public class TestController {
     @PostMapping(value = "/test", produces = MediaType.APPLICATION_XML_VALUE)
     public ResponseEntity<?> test(@RequestBody String xml) {
         log.info("Входящее сообщение по адресу /test  - {}", xml);
-        messageService.processMessage(xml);
+        xmlService.processMessage(xml);
         return ResponseEntity.ok("test!");
     }
 
