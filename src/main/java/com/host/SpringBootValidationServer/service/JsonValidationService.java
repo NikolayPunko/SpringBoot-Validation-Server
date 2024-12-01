@@ -13,11 +13,11 @@ import static com.host.SpringBootValidationServer.service.MessageService.NS_NNOD
 @Service
 public class JsonValidationService {
 
-    private final XmlValidationService xmlValidationService;
+    private final MessageService messageService;
 
     @Autowired
-    public JsonValidationService(XmlValidationService xmlValidationService) {
-        this.xmlValidationService = xmlValidationService;
+    public JsonValidationService(MessageService messageService) {
+        this.messageService = messageService;
     }
 
 
@@ -111,7 +111,7 @@ public class JsonValidationService {
                     }
 
 
-                    boolean result = xmlValidationService.validateFieldByType(fieldMsgType.asText(), x.getType().trim());
+                    boolean result = messageService.validateFieldByType(fieldMsgType.asText(), x.getType().trim());
 
                     if (!result) {
                         errorList.add(String.format("Ошибка в блоке %s поле %s несоответствие типу", "SYSSTAT", fieldName));

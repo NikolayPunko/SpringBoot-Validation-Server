@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.host.SpringBootValidationServer.exceptions.XMLParsingException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ public class JsonService {
 
     private final RoutingService routingService;
 
+    @Autowired
     public JsonService(MessageService messageService, JsonValidationService jsonValidationService, RoutingService routingService) {
         this.messageService = messageService;
         this.jsonValidationService = jsonValidationService;

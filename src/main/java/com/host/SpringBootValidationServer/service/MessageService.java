@@ -1,5 +1,6 @@
 package com.host.SpringBootValidationServer.service;
 
+import com.host.SpringBootValidationServer.exceptions.UnknownFieldTypeException;
 import com.host.SpringBootValidationServer.model.NsGrNmsg;
 import com.host.SpringBootValidationServer.model.NsNmsg;
 import com.host.SpringBootValidationServer.model.NsNnode;
@@ -8,10 +9,13 @@ import com.host.SpringBootValidationServer.repositories.GRNMSGRepository;
 import com.host.SpringBootValidationServer.repositories.NMSGRepository;
 import com.host.SpringBootValidationServer.repositories.NNODERepository;
 import com.host.SpringBootValidationServer.repositories.NRULERepository;
+import com.host.SpringBootValidationServer.util.DateUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Slf4j
@@ -92,6 +96,91 @@ public class MessageService {
         }
 
         return receiverList;
+    }
+
+    public boolean validateFieldByType(String content, String type) {
+
+        switch (type.toUpperCase()) {
+            case "INTEGER" -> {
+                return checkStrAsInteger(content);
+            }
+            case "DATETIME" -> {
+                checkStrAsDateTime(content);
+            }
+            case "Y/N" -> {
+                return checkStrAsBool(content);
+            }
+            case "UOM" -> {
+                return checkStrAsUOM(content);
+            }
+            default -> {
+                if (type.toUpperCase().startsWith("CHAR(") && type.toUpperCase().endsWith(")")) {
+                    return checkStrAsChar(content, type);
+                } else if(type.toUpperCase().startsWith("NUMBER")){
+                    return checkStrAsNumber(content, type);
+                }
+                else {
+                    throw new UnknownFieldTypeException(String.format("Неизвестный тип поля \"%s\"", type));
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private boolean checkStrAsInteger(String content) {
+        try {
+            Integer.parseInt(content);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    private boolean checkStrAsNumber(String content, String type) {
+        if(type.contains(",") && type.contains("(") && type.contains(")")){
+            short quantityBeforePoint = Short.parseShort(type.substring(type.indexOf("(")+1, type.indexOf(",")));
+            short accuracy = Short.parseShort(type.substring(type.indexOf(",")+1, type.indexOf(")")));
+            return  (content.substring(0,content.indexOf(".")).length() <= quantityBeforePoint) &&
+                    (content.substring(content.indexOf(".")+1).length() == accuracy);
+        } else if(type.contains("(") && type.contains(")")){
+            short quantityBeforePoint = Short.parseShort(type.substring(type.indexOf("(")+1, type.indexOf(")")));
+            if(content.contains(".")){
+                return content.substring(0,content.indexOf(".")).length() <= quantityBeforePoint;
+            } else {
+                return content.length() <= quantityBeforePoint;
+            }
+        } else {
+            try {
+                Double.parseDouble(content);
+                return true;
+            } catch (NumberFormatException e){
+                return false;
+            }
+        }
+    }
+
+    private boolean checkStrAsChar(String content, String type) {
+        short permittedLength = Short.parseShort(type.substring(5, type.length() - 1));
+        return content.length() <= permittedLength;
+    }
+
+    public static boolean checkStrAsDateTime(String content) {
+        try {
+            LocalDateTime localDateTime = LocalDateTime.parse(content, DateUtils.DATE_FORMAT);
+            return true;
+        } catch (Exception e){
+            return false;
+        }
+
+    }
+
+    private boolean checkStrAsBool(String content) {
+        return (content.equalsIgnoreCase("Y")) || (content.equalsIgnoreCase("N"));
+    }
+
+    private boolean checkStrAsUOM(String content) {
+        return (content.equalsIgnoreCase("PCE")) || (content.equalsIgnoreCase("KG"));
     }
 
 

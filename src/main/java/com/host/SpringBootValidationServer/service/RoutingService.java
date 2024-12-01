@@ -5,17 +5,12 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.host.SpringBootValidationServer.model.Connection;
 import com.host.SpringBootValidationServer.model.NsGrNmsg;
-import com.host.SpringBootValidationServer.model.NsNrule;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import static com.host.SpringBootValidationServer.service.MessageService.*;
@@ -27,6 +22,7 @@ public class RoutingService {
     private final RestTemplate restTemplate;
     private final KafkaService kafkaService;
 
+    @Autowired
     public RoutingService(RestTemplate restTemplate, KafkaService kafkaService) {
         this.restTemplate = restTemplate;
         this.kafkaService = kafkaService;
@@ -82,13 +78,14 @@ public class RoutingService {
 
     private void sendToHttp(String message, String url, String bearer) {
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_XML);
+        headers.setContentType(MediaType.ALL);
         headers.setBearerAuth(bearer);
         HttpEntity<String> request = new HttpEntity<>(message, headers);
 
         try {
-            ResponseEntity<String> response = restTemplate.postForEntity(url, message, String.class);
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
         } catch (Exception e) {
+            log.error("Ошибка при отправке сообщения по адресу {}:\n {}", url, e);
             throw new RuntimeException(String.format("Ошибка при отправке сообщения по адресу %s; ", url) + e);
         }
 
