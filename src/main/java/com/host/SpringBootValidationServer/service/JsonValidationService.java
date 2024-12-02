@@ -79,7 +79,7 @@ public class JsonValidationService {
                         .findFirst();
 
                 if (optionalNsNnode.isEmpty()) {
-                    errorList.add(String.format("Ошибка в блоке %s поле %s не соответствует справочнику", "SYSSTAT", fieldName));
+                    errorList.add(String.format("Поле %s не соответствует справочнику", fieldName));
                     continue;
                 }
 
@@ -97,14 +97,14 @@ public class JsonValidationService {
                     try {
                         validateNodes(fieldMsgType.findValues(arrField), errorList, knm);
                     } catch (Exception e){
-                        errorList.add(String.format("Ошибка в блоке %s поле %s не найдено", x.getNode().trim(), arrField));
+                        errorList.add(String.format("Поле %s не найдено", arrField));
                         continue;
                     }
 
                 } else {
 
                     if (x.getObligatory().trim().equalsIgnoreCase("yes") && fieldMsgType.asText().isEmpty()) {
-                        errorList.add(String.format("Ошибка в блоке %s поле %s не должно быть пустым", "SYSSTAT", fieldName));
+                        errorList.add(String.format("Поле %s не должно быть пустым", fieldName));
                         continue;
                     } else if(fieldMsgType.asText().isEmpty()){
                         continue;
@@ -114,7 +114,7 @@ public class JsonValidationService {
                     boolean result = messageService.validateFieldByType(fieldMsgType.asText(), x.getType().trim());
 
                     if (!result) {
-                        errorList.add(String.format("Ошибка в блоке %s поле %s несоответствие типу", "SYSSTAT", fieldName));
+                        errorList.add(String.format("Поле %s несоответствие типу", fieldName));
                     }
                 }
 
@@ -124,8 +124,7 @@ public class JsonValidationService {
             /* логика когда обязательные поля отсутствуют в словаре requiredFields */
             for (Map.Entry<String, Boolean> entry : requiredFields.entrySet()) {
                 if (!entry.getValue()) {
-                    errorList.add(String.format("Ошибка в блоке %s поле %s отсутствует",
-                            "SYSSTAT", entry.getKey().trim()));
+                    errorList.add(String.format("Поле %s отсутствует", entry.getKey().trim()));
                 }
             }
 

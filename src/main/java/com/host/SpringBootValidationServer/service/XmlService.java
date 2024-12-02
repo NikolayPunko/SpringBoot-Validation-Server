@@ -14,8 +14,7 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.ByteArrayInputStream;
-import java.io.StringWriter;
+import java.io.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +34,9 @@ public class XmlService {
     }
 
 
-    public void processMessage(String xml) {
+    public void processXmlMsg(String xml) {
+
+        xml = trimXML(xml);
 
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -147,14 +148,14 @@ public class XmlService {
             Transformer transformer = tFactory.newTransformer();
 
             transformer.setOutputProperty(OutputKeys.METHOD, "xml");
-//            transformer.setOutputProperty( OutputKeys.INDENT, "yes" ); //выравнивание
+            transformer.setOutputProperty( OutputKeys.INDENT, "yes" ); //выравнивание
             transformer.setOutputProperty("encoding", "UTF-8");
 
             DOMSource source = new DOMSource(doc);
             StringWriter sw = new StringWriter();
             StreamResult result = new StreamResult(sw);
             transformer.transform(source, result);
-            return sw.toString();
+            return sw.getBuffer().toString().trim();
         } catch (TransformerException e) {
             throw new XMLParsingException("Не удалось распарсить xml файл!");
         }
@@ -167,5 +168,18 @@ public class XmlService {
             node.getParentNode().removeChild(node);
         }
         doc.normalize();
+    }
+
+    public static String trimXML(String input) {
+        BufferedReader reader = new BufferedReader(new StringReader(input));
+        StringBuffer result = new StringBuffer();
+        try {
+            String line;
+            while ((line = reader.readLine()) != null)
+                result.append(line.trim());
+            return result.toString();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -32,7 +32,7 @@ public class JsonService {
     }
 
 
-    public void processJsonMessage(String json) {
+    public void processJsonMsg(String json) {
 
         try {
 
@@ -85,7 +85,6 @@ public class JsonService {
             routingService.sendDocuments(documentsForSend, facility);
 
 
-            System.out.println("end.");
         } catch (Exception e) {
             log.error(e.toString(), e);
         }
@@ -132,7 +131,7 @@ public class JsonService {
             objectNode.put("REPLYTO", objectNode.get("MSGID").asLong());
 
             String stringJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(objectNode);
-            System.out.println(stringJson);
+//            System.out.println(stringJson);
             return stringJson;
 
         } catch (Exception e) {

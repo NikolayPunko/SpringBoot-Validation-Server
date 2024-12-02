@@ -12,9 +12,16 @@ import com.host.SpringBootValidationServer.repositories.NRULERepository;
 import com.host.SpringBootValidationServer.util.DateUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.xml.sax.InputSource;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.StringReader;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -33,12 +40,18 @@ public class MessageService {
     private final NRULERepository nruleRepository;
     private final GRNMSGRepository grnmsgRepository;
 
+    private final JsonService jsonService;
+    private final XmlService xmlService;
+
     @Autowired
-    public MessageService(NMSGRepository nmsgRepository, NNODERepository nnodeRepository, NRULERepository nruleRepository, GRNMSGRepository grnmsgRepository) {
+    public MessageService(NMSGRepository nmsgRepository, NNODERepository nnodeRepository, NRULERepository nruleRepository,
+                          GRNMSGRepository grnmsgRepository, @Lazy JsonService jsonService, @Lazy XmlService xmlService) {
         this.nmsgRepository = nmsgRepository;
         this.nnodeRepository = nnodeRepository;
         this.nruleRepository = nruleRepository;
         this.grnmsgRepository = grnmsgRepository;
+        this.jsonService = jsonService;
+        this.xmlService = xmlService;
     }
 
     @PostConstruct
@@ -63,6 +76,41 @@ public class MessageService {
             NS_GRNMSG_MAP.put(obj.getKgr().trim(), obj);
         }
     }
+
+    public void processMsgByContentType(String msg){
+
+        if(isJson(msg)){
+            jsonService.processJsonMsg(msg);
+        } else if(isXml(msg)){
+            xmlService.processXmlMsg(msg);
+        } else {
+            log.error("Не удалось определить тип сообщения:\n {}", msg);
+            throw new RuntimeException("Не удалось определить тип сообщения!");
+        }
+    }
+
+    public static boolean isJson(String str) {
+        try {
+            new JSONObject(str);
+            return true;
+        } catch (JSONException e) {
+            return false;
+        }
+    }
+
+    public static boolean isXml(String str) {
+        try {
+
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+//            builder.parse(new ByteArrayInputStream(str.getBytes()));
+            builder.parse(new InputSource(new StringReader(str.trim())));
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
 
     public void checkSender(String sender,  List<String> errorList){
         if(!NS_GRNMSG_MAP.containsKey(sender)){

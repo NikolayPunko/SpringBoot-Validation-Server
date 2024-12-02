@@ -60,7 +60,7 @@ public class XmlValidationService {
                                 .findFirst();
 
                         if (optionalNsNnode.isEmpty()) {
-                            errorList.add(String.format("Ошибка в блоке %s поле %s не соответствует справочнику",nodeList.item(i).getNodeName(), node.getNodeName()));
+                            errorList.add(String.format("Поле %s не соответствует справочнику", node.getNodeName()));
                             continue;
                         }
 
@@ -78,7 +78,7 @@ public class XmlValidationService {
                         } else {
 
                             if (x.getObligatory().trim().equalsIgnoreCase("yes") && node.getTextContent().isEmpty()) {
-                                errorList.add(String.format("Ошибка в блоке %s поле %s не должно быть пустым", nodeList.item(i).getNodeName(), node.getNodeName()));
+                                errorList.add(String.format("Поле %s не должно быть пустым", node.getNodeName()));
                                 continue;
                             } else if(node.getTextContent().isEmpty()){
                                 continue;
@@ -88,7 +88,7 @@ public class XmlValidationService {
                             boolean result = messageService.validateFieldByType(node.getTextContent(), x.getType().trim());
 
                             if (!result) {
-                                errorList.add(String.format("Ошибка в блоке %s поле %s несоответствие типу", nodeList.item(i).getNodeName(), node.getNodeName()));
+                                errorList.add(String.format("Поле %s несоответствие типу", node.getNodeName()));
                             }
                         }
 
@@ -100,8 +100,7 @@ public class XmlValidationService {
                 /* логика когда обязательные поля отсутствуют в словаре requiredFields */
                 for (Map.Entry<String, Boolean> entry : requiredFields.entrySet()) {
                     if (!entry.getValue()) {
-                        errorList.add(String.format("Ошибка в блоке %s поле %s отсутствует",
-                                nodeList.item(i).getNodeName(), entry.getKey().trim()));
+                        errorList.add(String.format("Поле %s отсутствует", entry.getKey().trim()));
                     }
                 }
 
