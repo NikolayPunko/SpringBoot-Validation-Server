@@ -79,8 +79,22 @@ public class MessageService {
 
     public void processMsgByContentType(String msg){
 
+        Map<String, String> documentsForSend = new HashMap<>();
+
         if(isJson(msg)){
-            jsonService.processJsonMsg(msg);
+            jsonService.processJsonMsg(msg,documentsForSend);
+        } else if(isXml(msg)){
+            xmlService.processXmlMsg(msg);
+        } else {
+            log.error("Не удалось определить тип сообщения:\n {}", msg);
+            throw new RuntimeException("Не удалось определить тип сообщения!");
+        }
+    }
+
+    public void processMsgByContentType(String msg, Map<String, String> documentsForSend){
+
+        if(isJson(msg)){
+            jsonService.processJsonMsg(msg,documentsForSend);
         } else if(isXml(msg)){
             xmlService.processXmlMsg(msg);
         } else {

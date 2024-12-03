@@ -32,7 +32,7 @@ public class JsonService {
     }
 
 
-    public void processJsonMsg(String json) {
+    public void processJsonMsg(String json, Map<String, String> documentsForSend) {
 
         try {
 
@@ -63,15 +63,14 @@ public class JsonService {
 
             /* маршрутизация */
 
-            Map<String, String> documentsForSend = new HashMap<>();
+//            Map<String, String> documentsForSend = new HashMap<>();
 
             messageService.checkSender(sender, errorList);
 
             try {
                 if (errorList.isEmpty()) {
                     List<String> receivers = messageService.getListReceivers(facility, knmMsg, sender);
-                    documentsForSend = generateDocListWithReceivers(msgNode, receivers);
-                    System.out.println();
+                    generateDocListWithReceivers(msgNode, receivers, documentsForSend);
                 }
             } catch (Exception e) {
                 errorList.add(e.getMessage());
@@ -84,16 +83,15 @@ public class JsonService {
 
             routingService.sendDocuments(documentsForSend, facility);
 
-
+            System.out.println(documentsForSend);
         } catch (Exception e) {
             log.error(e.toString(), e);
         }
     }
 
-    private Map<String, String> generateDocListWithReceivers(JsonNode msgNode, List<String> receivers) {
+    private void generateDocListWithReceivers(JsonNode msgNode, List<String> receivers, Map<String, String> documents) {
 
         try {
-            Map<String, String> documents = new HashMap<>();
 
             for (String receiver : receivers) {
                 ObjectMapper objectMapper = new ObjectMapper();
@@ -105,7 +103,6 @@ public class JsonService {
                 documents.put(receiver, stringJson);
             }
 
-            return documents;
         } catch (Exception e) {
             throw new XMLParsingException("Ошибка создания сообщений для отправки получателям, проверьте поля RECEIVER и SENDER;");
         }
