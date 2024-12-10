@@ -84,7 +84,7 @@ public class MessageService {
         if(isJson(msg)){
             jsonService.processJsonMsg(msg,documentsForSend);
         } else if(isXml(msg)){
-            xmlService.processXmlMsg(msg);
+            xmlService.processXmlMsg(msg, documentsForSend);
         } else {
             log.error("Не удалось определить тип сообщения:\n {}", msg);
             throw new RuntimeException("Не удалось определить тип сообщения!");
@@ -96,7 +96,7 @@ public class MessageService {
         if(isJson(msg)){
             jsonService.processJsonMsg(msg,documentsForSend);
         } else if(isXml(msg)){
-            xmlService.processXmlMsg(msg);
+            xmlService.processXmlMsg(msg, documentsForSend);
         } else {
             log.error("Не удалось определить тип сообщения:\n {}", msg);
             throw new RuntimeException("Не удалось определить тип сообщения!");

@@ -5,12 +5,15 @@ import com.host.SpringBootValidationServer.SpringBootValidationServerApplication
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
+import org.skyscreamer.jsonassert.JSONAssert;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.xmlunit.builder.DiffBuilder;
+import org.xmlunit.diff.Diff;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,16 +37,9 @@ class MessageServiceIntegrationTest {
     @MockBean
     private RoutingService routingService;
 
-    private ObjectMapper objectMapper;
-
-    @BeforeEach
-    public void before(){
-        objectMapper = new ObjectMapper();
-    }
-
 
     @Test
-    public void testProcessMsgByContentType1() throws Exception {
+    public void testProcessJsonMsg1() throws Exception {
 
         String msg = "{\n" +
                 "  \"MESSAGE\": {\n" +
@@ -102,17 +98,15 @@ class MessageServiceIntegrationTest {
 
         assertEquals(2, documentsForSend.size());
 
-        var expJson1 = objectMapper.readTree(expStr1);
-        var actualJson1 = objectMapper.readTree(documentsForSend.get("TEST2"));
-        assertEquals(expJson1, actualJson1);
+        var actualStr1 = documentsForSend.get("TEST2");
+        JSONAssert.assertEquals(expStr1, actualStr1, false);// Сравнение JSON (true - строгая проверка, false - игнорирование порядка полей)
 
-        var expJson2 = objectMapper.readTree(expStr2);
-        var actualJson2 = objectMapper.readTree(documentsForSend.get("TEST1"));
-        assertEquals(expJson2, actualJson2);
+        var actualStr2 = documentsForSend.get("TEST1");
+        JSONAssert.assertEquals(expStr2, actualStr2, false);
     }
 
     @Test
-    public void testProcessMsgByContentType2() throws Exception {
+    public void testProcessJsonMsg2() throws Exception {
 
         String msg = "{\n" +
                 "  \"MESSAGE\": {\n" +
@@ -155,13 +149,12 @@ class MessageServiceIntegrationTest {
 
         assertEquals(1, documentsForSend.size());
 
-        var expJson1 = objectMapper.readTree(expStr1);
-        var actualJson1 = objectMapper.readTree(documentsForSend.get("HOST"));
-        assertEquals(expJson1, actualJson1);
+        var actualStr1 = documentsForSend.get("HOST");
+        JSONAssert.assertEquals(expStr1, actualStr1, false);
     }
 
     @Test
-    public void testProcessMsgByContentType3() throws Exception {
+    public void testProcessJsonMsg3() throws Exception {
 
         String msg = "{\n" +
                 "  \"MESSAGE\": {\n" +
@@ -261,13 +254,12 @@ class MessageServiceIntegrationTest {
 
         assertEquals(1, documentsForSend.size());
 
-        var expJson1 = objectMapper.readTree(expStr1);
-        var actualJson1 = objectMapper.readTree(documentsForSend.get("HOST"));
-        assertEquals(expJson1, actualJson1);
+        var actualStr1 = documentsForSend.get("HOST");
+        JSONAssert.assertEquals(expStr1, actualStr1, false);
     }
 
     @Test
-    public void testProcessMsgByContentType4() throws Exception {
+    public void testProcessJsonMsg4() throws Exception {
 
         String msg = "{\n" +
                 "  \"MESSAGE\": {\n" +
@@ -421,13 +413,12 @@ class MessageServiceIntegrationTest {
 
         assertEquals(1, documentsForSend.size());
 
-        var expJson1 = objectMapper.readTree(expStr1);
-        var actualJson1 = objectMapper.readTree(documentsForSend.get("NAS"));
-        assertEquals(expJson1, actualJson1);
+        var actualStr1 = documentsForSend.get("NAS");
+        JSONAssert.assertEquals(expStr1, actualStr1, false);
     }
 
     @Test
-    public void testProcessMsgByContentType5() throws Exception {
+    public void testProcessJsonMsg5() throws Exception {
 
         String msg = "{\n" +
                 "  \"MESSAGE\": {\n" +
@@ -531,9 +522,531 @@ class MessageServiceIntegrationTest {
 
         assertEquals(1, documentsForSend.size());
 
-        var expJson1 = objectMapper.readTree(expStr1);
-        var actualJson1 = objectMapper.readTree(documentsForSend.get("HOST"));
-        assertEquals(expJson1, actualJson1);
+        var actualStr1 = documentsForSend.get("HOST");
+        JSONAssert.assertEquals(expStr1, actualStr1, false);
+    }
+
+    @Test
+    public void testProcessXmlMsg1() {
+
+        String msg = "<MESSAGE>\n" +
+                "<MSGID>3385</MSGID>\n" +
+                "<MSGTYPE>SYSSTAT</MSGTYPE>\n" +
+                "<REPLYTO></REPLYTO>\n" +
+                "<TIMESTAMP>20240815152950</TIMESTAMP>\n" +
+                "<FACILITY>TEST1</FACILITY>\n" +
+                "<ACTION>SET</ACTION>\n" +
+                "<SENDER>HOST</SENDER>\n" +
+                "<RECIEVER>TEST1</RECIEVER>\n" +
+                "<SYSSTAT>\n" +
+                "   <ERROR_CODE>0</ERROR_CODE>\n" +
+                "   <DESCRIPTION>ok</DESCRIPTION>\n" +
+                "</SYSSTAT>\n" +
+                "</MESSAGE>";
+
+        String expStr1 = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n" +
+                "<MESSAGE>\n" +
+                "    <MSGID>3385</MSGID>\n" +
+                "    <MSGTYPE>SYSSTAT</MSGTYPE>\n" +
+                "    <REPLYTO/>\n" +
+                "    <TIMESTAMP>20240815152950</TIMESTAMP>\n" +
+                "    <FACILITY>TEST1</FACILITY>\n" +
+                "    <ACTION>SET</ACTION>\n" +
+                "    <SENDER>SERVER</SENDER>\n" +
+                "    <RECIEVER>TEST2</RECIEVER>\n" +
+                "    <SYSSTAT>\n" +
+                "        <ERROR_CODE>0</ERROR_CODE>\n" +
+                "        <DESCRIPTION>ok</DESCRIPTION>\n" +
+                "    </SYSSTAT>\n" +
+                "</MESSAGE>";
+
+        String expStr2 = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n" +
+                "<MESSAGE>\n" +
+                "    <MSGID>3385</MSGID>\n" +
+                "    <MSGTYPE>SYSSTAT</MSGTYPE>\n" +
+                "    <REPLYTO/>\n" +
+                "    <TIMESTAMP>20240815152950</TIMESTAMP>\n" +
+                "    <FACILITY>TEST1</FACILITY>\n" +
+                "    <ACTION>SET</ACTION>\n" +
+                "    <SENDER>SERVER</SENDER>\n" +
+                "    <RECIEVER>TEST1</RECIEVER>\n" +
+                "    <SYSSTAT>\n" +
+                "        <ERROR_CODE>0</ERROR_CODE>\n" +
+                "        <DESCRIPTION>ok</DESCRIPTION>\n" +
+                "    </SYSSTAT>\n" +
+                "</MESSAGE>";
+
+
+        Map<String, String> documentsForSend = new HashMap<>();
+
+        //подменяем метод sendDocuments, чтобы он ничего не делал
+        doNothing().when(routingService).sendDocuments(any(),any());
+
+        messageService.processMsgByContentType(msg, documentsForSend);
+
+        assertEquals(2, documentsForSend.size());
+
+        var actualStr1 = documentsForSend.get("TEST2");
+        Diff diff1 = DiffBuilder.compare(expStr1)
+                .withTest(actualStr1)
+                .ignoreWhitespace()
+                .checkForSimilar()
+                .build();
+
+        assertFalse(diff1.hasDifferences(), "XML должны быть идентичны");
+
+        var actualStr2 = documentsForSend.get("TEST1");
+
+        Diff diff2 = DiffBuilder.compare(expStr2)
+                .withTest(actualStr2)
+                .ignoreWhitespace()
+                .checkForSimilar()
+                .build();
+
+        assertFalse(diff2.hasDifferences(), "XML должны быть идентичны");
+    }
+
+    @Test
+    public void testProcessXmlMsg2() {
+
+        String msg = "<MESSAGE>\n" +
+                "<MSGID>3385</MSGID>\n" +
+                "<MSGTYPE>SYSSTAT</MSGTYPE>\n" +
+                "<REPLYTO></REPLYTO>\n" +
+                "<TIMESTAMP>20240815152950</TIMESTAMP>\n" +
+                "<FACILITY>TEST1</FACILITY>\n" +
+                "<ACTION>SET</ACTION>\n" +
+                "<SENDER>HOST</SENDER>\n" +
+                "<RECIEVER>TEST1</RECIEVER>\n" +
+                "<SYSSTAT>\n" +
+//                "   <ERROR_CODE>0</ERROR_CODE>\n" +
+                "   <DESCRIPTION>ok</DESCRIPTION>\n" +
+                "</SYSSTAT>\n" +
+                "</MESSAGE>";
+
+        String expStr1 = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n" +
+                "<MESSAGE>\n" +
+                "    <MSGID>3385</MSGID>\n" +
+                "    <MSGTYPE>SYSSTAT</MSGTYPE>\n" +
+                "    <REPLYTO>3385</REPLYTO>\n" +
+                "    <TIMESTAMP>20240815152950</TIMESTAMP>\n" +
+                "    <FACILITY>TEST1</FACILITY>\n" +
+                "    <ACTION>SET</ACTION>\n" +
+                "    <SENDER>HOST</SENDER>\n" +
+                "    <RECIEVER>TEST1</RECIEVER>\n" +
+                "    <SYSSTAT>\n" +
+                "        <ERROR_CODE>400</ERROR_CODE>\n" +
+                "        <DESCRIPTION>Поле ERROR_CODE отсутствует</DESCRIPTION>\n" +
+                "    </SYSSTAT>\n" +
+                "</MESSAGE>";
+
+
+        Map<String, String> documentsForSend = new HashMap<>();
+
+        doNothing().when(routingService).sendDocuments(any(),any());
+
+        messageService.processMsgByContentType(msg, documentsForSend);
+
+        assertEquals(1, documentsForSend.size());
+
+        var actualStr1 = documentsForSend.get("HOST");
+
+        Diff diff1 = DiffBuilder.compare(expStr1)
+                .withTest(actualStr1)
+                .ignoreWhitespace()
+                .checkForSimilar()
+                .build();
+
+        assertFalse(diff1.hasDifferences(), "XML должны быть идентичны");
+    }
+
+    @Test
+    public void testProcessXmlMsg3() {
+
+        String msg = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<MESSAGE>\n" +
+                "    <MSGID>161</MSGID>\n" +
+                "    <MSGTYPE>ITEM</MSGTYPE>\n" +
+                "    <REPLYTO></REPLYTO>\n" +
+                "    <TIMESTAMP>20240815152950</TIMESTAMP>\n" +
+                "    <FACILITY>TEST19</FACILITY>\n" +
+                "    <ACTION>SET</ACTION>\n" +
+                "    <SENDER>HOST</SENDER>\n" +
+                "    <RECIEVER>TEST19</RECIEVER>\n" +
+                "    <ITEM>\n" +
+                "        <ITEM_ID>0307060137</ITEM_ID>\n" +
+                "        <ITEM_REF>3937</ITEM_REF>\n" +
+                "        <SKU_UOM/>\n" +
+                "        <BASIC_UOM>PCE</BASIC_UOM>\n" +
+                "        <SKU_BASIC_QUANTITY/>\n" +
+                "        <NAME>Сырок гл. МАКОВКА 20% 40г</NAME>\n" +
+                "        <EAN>4810268055485</EAN>\n" +
+                "        <CATEGORY>1803090000</CATEGORY>\n" +
+                "        <CATEGORY_NAME>конфетно-десертная линейка</CATEGORY_NAME>\n" +
+                "        <NAS/>\n" +
+                "        <DESCRIPTION>Сырок творожный глазированный \"Маковка\" массовой долей жира 20,0 %, ФЛОУПАК 40 г</DESCRIPTION>\n" +
+                "        <SPECIFICATION/>\n" +
+                "        <ACTIVE/>\n" +
+                "        <QUALITY_CONTROL>Y</QUALITY_CONTROL>\n" +
+                "        <NETTO_WEIGHT/>\n" +
+                "        <BRUTTO_WEIGHT>0.04</BRUTTO_WEIGHT>>\n" +
+                "        <VOLUME/>\n" +
+                "        <SHELF_LIFE>30</SHELF_LIFE>\n" +
+                "        <FREQUENCY/>\n" +
+                "        <LOT>Y</LOT>\n" +
+                "        <BBDATE>Y</BBDATE>\n" +
+                "        <SERIAL/>\n" +
+                "        <WRAPPING/>\n" +
+                "        <LU_TYPE/>\n" +
+                "        <TEMPERATURE_REGIME/>\n" +
+                "        <PACKINGS>\n" +
+                "            <PACKING>\n" +
+                "                <ITEM_ID>0307060137</ITEM_ID>\n" +
+                "                <EANPACK>14810268055482</EANPACK>\n" +
+                "                <PARENT_QUANTITY>18</PARENT_QUANTITY>\n" +
+                "                <LU_QUANTITY>315</LU_QUANTITY>\n" +
+                "                <NAME/>\n" +
+                "                <DESCRIPTION/>\n" +
+                "                <WIDTH/>\n" +
+                "                <LENGTH/>\n" +
+                "                <HEIGHT/>\n" +
+                "                <NET_WEIGHT/>\n" +
+                "                <GROSS_WEIGHT/>\n" +
+                "                <VOLUME/>\n" +
+                "                <ZIP/>\n" +
+                "            </PACKING>\n" +
+                "            <PACKING>\n" +
+                "                <ITEM_ID>0307060137</ITEM_ID>\n" +
+                "                <EANPACK>24810268055489</EANPACK>\n" +
+                "                <PARENT_QUANTITY>18</PARENT_QUANTITY>\n" +
+                "                <LU_QUANTITY>315</LU_QUANTITY>\n" +
+                "                <NAME/>\n" +
+                "                <DESCRIPTION/>\n" +
+                "                <WIDTH/>\n" +
+                "                <LENGTH/>\n" +
+                "                <HEIGHT/>\n" +
+                "                <NET_WEIGHT/>\n" +
+                "                <GROSS_WEIGHT/>\n" +
+                "                <VOLUME/>\n" +
+                "                <ZIP/>\n" +
+                "            </PACKING>\n" +
+                "        </PACKINGS>\n" +
+                "    </ITEM>\n" +
+                "</MESSAGE>";
+
+        String expStr1 = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n" +
+                "<MESSAGE>\n" +
+                "    <MSGID>161</MSGID>\n" +
+                "    <MSGTYPE>ITEM</MSGTYPE>\n" +
+                "    <REPLYTO>161</REPLYTO>\n" +
+                "    <TIMESTAMP>20240815152950</TIMESTAMP>\n" +
+                "    <FACILITY>TEST19</FACILITY>\n" +
+                "    <ACTION>SET</ACTION>\n" +
+                "    <SENDER>HOST</SENDER>\n" +
+                "    <RECIEVER>TEST19</RECIEVER>\n" +
+                "    <SYSSTAT>\n" +
+                "        <ERROR_CODE>400</ERROR_CODE>\n" +
+                "        <DESCRIPTION>Cообщение не прописано в правилах маршрутизации!</DESCRIPTION>\n" +
+                "    </SYSSTAT>\n" +
+                "</MESSAGE>";
+
+
+        Map<String, String> documentsForSend = new HashMap<>();
+
+        doNothing().when(routingService).sendDocuments(any(),any());
+
+        messageService.processMsgByContentType(msg, documentsForSend);
+
+        assertEquals(1, documentsForSend.size());
+
+        var actualStr1 = documentsForSend.get("HOST");
+
+        Diff diff1 = DiffBuilder.compare(expStr1)
+                .withTest(actualStr1)
+                .ignoreWhitespace()
+                .checkForSimilar()
+                .build();
+
+        assertFalse(diff1.hasDifferences(), "XML должны быть идентичны");
+    }
+
+    @Test
+    public void testProcessXmlMsg4() {
+
+        String msg = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<MESSAGE>\n" +
+                "    <MSGID>161</MSGID>\n" +
+                "    <MSGTYPE>ITEM</MSGTYPE>\n" +
+                "    <REPLYTO></REPLYTO>\n" +
+                "    <TIMESTAMP>20240815152950</TIMESTAMP>\n" +
+                "    <FACILITY>NAS</FACILITY>\n" +
+                "    <ACTION>SET</ACTION>\n" +
+                "    <SENDER>HOST</SENDER>\n" +
+                "    <RECIEVER>HOST</RECIEVER>\n" +
+                "    <ITEM>\n" +
+                "        <ITEM_ID>0307060137</ITEM_ID>\n" +
+                "        <ITEM_REF>3937</ITEM_REF>\n" +
+                "        <SKU_UOM/>\n" +
+                "        <BASIC_UOM>PCE</BASIC_UOM>\n" +
+                "        <SKU_BASIC_QUANTITY/>\n" +
+                "        <NAME>Сырок гл. МАКОВКА 20% 40г</NAME>\n" +
+                "        <EAN>4810268055485</EAN>\n" +
+                "        <CATEGORY>1803090000</CATEGORY>\n" +
+                "        <CATEGORY_NAME>конфетно-десертная линейка</CATEGORY_NAME>\n" +
+                "        <NAS/>\n" +
+                "        <DESCRIPTION>Сырок творожный глазированный \"Маковка\" массовой долей жира 20,0 %, ФЛОУПАК 40 г</DESCRIPTION>\n" +
+                "        <SPECIFICATION/>\n" +
+                "        <ACTIVE/>\n" +
+                "        <QUALITY_CONTROL>Y</QUALITY_CONTROL>\n" +
+                "        <NETTO_WEIGHT/>\n" +
+                "        <BRUTTO_WEIGHT>0.04</BRUTTO_WEIGHT>>\n" +
+                "        <VOLUME/>\n" +
+                "        <SHELF_LIFE>30</SHELF_LIFE>\n" +
+                "        <FREQUENCY/>\n" +
+                "        <LOT>Y</LOT>\n" +
+                "        <BBDATE>Y</BBDATE>\n" +
+                "        <SERIAL/>\n" +
+                "        <WRAPPING/>\n" +
+                "        <LU_TYPE/>\n" +
+                "        <TEMPERATURE_REGIME/>\n" +
+                "        <PACKINGS>\n" +
+                "            <PACKING>\n" +
+                "                <ITEM_ID>0307060137</ITEM_ID>\n" +
+                "                <EANPACK>14810268055482</EANPACK>\n" +
+                "                <PARENT_QUANTITY>18</PARENT_QUANTITY>\n" +
+                "                <LU_QUANTITY>315</LU_QUANTITY>\n" +
+                "                <NAME/>\n" +
+                "                <DESCRIPTION/>\n" +
+                "                <WIDTH/>\n" +
+                "                <LENGTH/>\n" +
+                "                <HEIGHT/>\n" +
+                "                <NET_WEIGHT/>\n" +
+                "                <GROSS_WEIGHT/>\n" +
+                "                <VOLUME/>\n" +
+                "                <ZIP/>\n" +
+                "            </PACKING>\n" +
+                "            <PACKING>\n" +
+                "                <ITEM_ID>0307060137</ITEM_ID>\n" +
+                "                <EANPACK>24810268055489</EANPACK>\n" +
+                "                <PARENT_QUANTITY>18</PARENT_QUANTITY>\n" +
+                "                <LU_QUANTITY>315</LU_QUANTITY>\n" +
+                "                <NAME/>\n" +
+                "                <DESCRIPTION/>\n" +
+                "                <WIDTH/>\n" +
+                "                <LENGTH/>\n" +
+                "                <HEIGHT/>\n" +
+                "                <NET_WEIGHT/>\n" +
+                "                <GROSS_WEIGHT/>\n" +
+                "                <VOLUME/>\n" +
+                "                <ZIP/>\n" +
+                "            </PACKING>\n" +
+                "        </PACKINGS>\n" +
+                "    </ITEM>\n" +
+                "</MESSAGE>";
+
+        String expStr1 = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n" +
+                "<MESSAGE>\n" +
+                "    <MSGID>161</MSGID>\n" +
+                "    <MSGTYPE>ITEM</MSGTYPE>\n" +
+                "    <REPLYTO/>\n" +
+                "    <TIMESTAMP>20240815152950</TIMESTAMP>\n" +
+                "    <FACILITY>NAS</FACILITY>\n" +
+                "    <ACTION>SET</ACTION>\n" +
+                "    <SENDER>SERVER</SENDER>\n" +
+                "    <RECIEVER>NAS</RECIEVER>\n" +
+                "    <ITEM>\n" +
+                "        <ITEM_ID>0307060137</ITEM_ID>\n" +
+                "        <ITEM_REF>3937</ITEM_REF>\n" +
+                "        <SKU_UOM/>\n" +
+                "        <BASIC_UOM>PCE</BASIC_UOM>\n" +
+                "        <SKU_BASIC_QUANTITY/>\n" +
+                "        <NAME>Сырок гл. МАКОВКА 20% 40г</NAME>\n" +
+                "        <EAN>4810268055485</EAN>\n" +
+                "        <CATEGORY>1803090000</CATEGORY>\n" +
+                "        <CATEGORY_NAME>конфетно-десертная линейка</CATEGORY_NAME>\n" +
+                "        <NAS/>\n" +
+                "        <DESCRIPTION>Сырок творожный глазированный \"Маковка\" массовой долей жира 20,0 %, ФЛОУПАК 40 г</DESCRIPTION>\n" +
+                "        <SPECIFICATION/>\n" +
+                "        <ACTIVE/>\n" +
+                "        <QUALITY_CONTROL>Y</QUALITY_CONTROL>\n" +
+                "        <NETTO_WEIGHT/>\n" +
+                "        <BRUTTO_WEIGHT>0.04</BRUTTO_WEIGHT>\n" +
+                "        &gt;\n" +
+                "        <VOLUME/>\n" +
+                "        <SHELF_LIFE>30</SHELF_LIFE>\n" +
+                "        <FREQUENCY/>\n" +
+                "        <LOT>Y</LOT>\n" +
+                "        <BBDATE>Y</BBDATE>\n" +
+                "        <SERIAL/>\n" +
+                "        <WRAPPING/>\n" +
+                "        <LU_TYPE/>\n" +
+                "        <TEMPERATURE_REGIME/>\n" +
+                "        <PACKINGS>\n" +
+                "            <PACKING>\n" +
+                "                <ITEM_ID>0307060137</ITEM_ID>\n" +
+                "                <EANPACK>14810268055482</EANPACK>\n" +
+                "                <PARENT_QUANTITY>18</PARENT_QUANTITY>\n" +
+                "                <LU_QUANTITY>315</LU_QUANTITY>\n" +
+                "                <NAME/>\n" +
+                "                <DESCRIPTION/>\n" +
+                "                <WIDTH/>\n" +
+                "                <LENGTH/>\n" +
+                "                <HEIGHT/>\n" +
+                "                <NET_WEIGHT/>\n" +
+                "                <GROSS_WEIGHT/>\n" +
+                "                <VOLUME/>\n" +
+                "                <ZIP/>\n" +
+                "            </PACKING>\n" +
+                "            <PACKING>\n" +
+                "                <ITEM_ID>0307060137</ITEM_ID>\n" +
+                "                <EANPACK>24810268055489</EANPACK>\n" +
+                "                <PARENT_QUANTITY>18</PARENT_QUANTITY>\n" +
+                "                <LU_QUANTITY>315</LU_QUANTITY>\n" +
+                "                <NAME/>\n" +
+                "                <DESCRIPTION/>\n" +
+                "                <WIDTH/>\n" +
+                "                <LENGTH/>\n" +
+                "                <HEIGHT/>\n" +
+                "                <NET_WEIGHT/>\n" +
+                "                <GROSS_WEIGHT/>\n" +
+                "                <VOLUME/>\n" +
+                "                <ZIP/>\n" +
+                "            </PACKING>\n" +
+                "        </PACKINGS>\n" +
+                "    </ITEM>\n" +
+                "</MESSAGE>";
+
+
+        Map<String, String> documentsForSend = new HashMap<>();
+
+        doNothing().when(routingService).sendDocuments(any(),any());
+
+        messageService.processMsgByContentType(msg, documentsForSend);
+
+        assertEquals(1, documentsForSend.size());
+
+        var actualStr1 = documentsForSend.get("NAS");
+
+        Diff diff1 = DiffBuilder.compare(expStr1)
+                .withTest(actualStr1)
+                .ignoreWhitespace()
+                .checkForSimilar()
+                .build();
+
+        assertFalse(diff1.hasDifferences(), "XML должны быть идентичны");
+    }
+
+    @Test
+    public void testProcessXmlMsg5() {
+
+        String msg = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<MESSAGE>\n" +
+                "    <MSGID>161</MSGID>\n" +
+                "    <MSGTYPE>ITEM</MSGTYPE>\n" +
+                "    <REPLYTO></REPLYTO>\n" +
+                "    <TIMESTAMP>20240815152950</TIMESTAMP>\n" +
+                "    <FACILITY>TEST19</FACILITY>\n" +
+                "    <ACTION>SET</ACTION>\n" +
+                "    <SENDER>HOST</SENDER>\n" +
+                "    <RECIEVER>TEST19</RECIEVER>\n" +
+                "    <ITEM>\n" +
+                "        <ITEM_ID>0307060137</ITEM_ID>\n" +
+                "        <ITEM_REF>3937</ITEM_REF>\n" +
+                "        <SKU_UOM/>\n" +
+                "        <BASIC_UOM>PCE</BASIC_UOM>\n" +
+                "        <SKU_BASIC_QUANTITY/>\n" +
+                "        <NAME>Сырок гл. МАКОВКА 20% 40г</NAME>\n" +
+                "        <EAN>4810268055485</EAN>\n" +
+                "        <CATEGORY>1803090000</CATEGORY>\n" +
+                "        <CATEGORY_NAME>конфетно-десертная линейка</CATEGORY_NAME>\n" +
+                "        <NAS/>\n" +
+                "        <DESCRIPTION>Сырок творожный глазированный \"Маковка\" массовой долей жира 20,0 %, ФЛОУПАК 40 г</DESCRIPTION>\n" +
+                "        <SPECIFICATION/>\n" +
+                "        <ACTIVE/>\n" +
+                "        <QUALITY_CONTROL>Y</QUALITY_CONTROL>\n" +
+                "        <NETTO_WEIGHT/>\n" +
+                "        <BRUTTO_WEIGHT>0.04</BRUTTO_WEIGHT>>\n" +
+                "        <VOLUME/>\n" +
+//                "        <SHELF_LIFE>30</SHELF_LIFE>\n" +
+                "        <SHELF_LIFE>TEST</SHELF_LIFE>\n" +
+                "        <FREQUENCY/>\n" +
+//                "        <LOT>Y</LOT>\n" +
+                "        <LOT>YES</LOT>\n" +
+                "        <BBDATE>Y</BBDATE>\n" +
+                "        <SERIAL/>\n" +
+                "        <WRAPPING/>\n" +
+                "        <LU_TYPE/>\n" +
+                "        <TEMPERATURE_REGIME/>\n" +
+                "        <PACKINGS>\n" +
+                "            <PACKING>\n" +
+                "                <ITEM_ID>0307060137</ITEM_ID>\n" +
+//                "                <EANPACK>14810268055482</EANPACK>\n" +
+                "                <PARENT_QUANTITY>18</PARENT_QUANTITY>\n" +
+                "                <LU_QUANTITY>315</LU_QUANTITY>\n" +
+                "                <NAME/>\n" +
+                "                <DESCRIPTION/>\n" +
+                "                <WIDTH/>\n" +
+                "                <LENGTH/>\n" +
+                "                <HEIGHT/>\n" +
+                "                <NET_WEIGHT/>\n" +
+                "                <GROSS_WEIGHT/>\n" +
+                "                <VOLUME/>\n" +
+                "                <ZIP/>\n" +
+                "            </PACKING>\n" +
+                "            <PACKING>\n" +
+//                "                <ITEM_ID>0307060137</ITEM_ID>\n" +
+                "                <EANPACK>24810268055489</EANPACK>\n" +
+//                "                <PARENT_QUANTITY>18</PARENT_QUANTITY>\n" +
+                "                <PARENT_QUANTITY>TEST</PARENT_QUANTITY>\n" +
+                "                <LU_QUANTITY>315</LU_QUANTITY>\n" +
+                "                <NAME/>\n" +
+                "                <DESCRIPTION/>\n" +
+                "                <WIDTH/>\n" +
+                "                <LENGTH/>\n" +
+                "                <HEIGHT/>\n" +
+                "                <NET_WEIGHT/>\n" +
+                "                <GROSS_WEIGHT/>\n" +
+                "                <VOLUME/>\n" +
+                "                <ZIP/>\n" +
+                "            </PACKING>\n" +
+                "        </PACKINGS>\n" +
+                "    </ITEM>\n" +
+                "</MESSAGE>";
+
+        String expStr1 = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n" +
+                "<MESSAGE>\n" +
+                "    <MSGID>161</MSGID>\n" +
+                "    <MSGTYPE>ITEM</MSGTYPE>\n" +
+                "    <REPLYTO>161</REPLYTO>\n" +
+                "    <TIMESTAMP>20240815152950</TIMESTAMP>\n" +
+                "    <FACILITY>TEST19</FACILITY>\n" +
+                "    <ACTION>SET</ACTION>\n" +
+                "    <SENDER>HOST</SENDER>\n" +
+                "    <RECIEVER>TEST19</RECIEVER>\n" +
+                "    <SYSSTAT>\n" +
+                "        <ERROR_CODE>400</ERROR_CODE>\n" +
+                "        <DESCRIPTION>Поле SHELF_LIFE несоответствие типу, Поле LOT несоответствие типу, Поле EANPACK отсутствует, Поле PARENT_QUANTITY несоответствие типу, Поле ITEM_ID отсутствует</DESCRIPTION>\n" +
+                "    </SYSSTAT>\n" +
+                "</MESSAGE>";
+
+
+        Map<String, String> documentsForSend = new HashMap<>();
+
+        doNothing().when(routingService).sendDocuments(any(),any());
+
+        messageService.processMsgByContentType(msg, documentsForSend);
+
+        assertEquals(1, documentsForSend.size());
+
+        var actualStr1 = documentsForSend.get("HOST");
+
+        Diff diff1 = DiffBuilder.compare(expStr1)
+                .withTest(actualStr1)
+                .ignoreWhitespace()
+                .checkForSimilar()
+                .build();
+
+        assertFalse(diff1.hasDifferences(), "XML должны быть идентичны");
     }
 
 

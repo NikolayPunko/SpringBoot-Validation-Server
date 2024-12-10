@@ -50,19 +50,19 @@ public class RoutingService {
             if (connection.getType().trim().equalsIgnoreCase("API")) {
 
                 if (!facility.equalsIgnoreCase("NAS") && !facility.equalsIgnoreCase("HOST")) {
-                    log.info("Отработала заглушка, Http '{}': \n {}", connection.getUrl(), msg);
-                } else {
                     sendToHttp(msg, connection.getUrl(), connection.getBearer());
                     log.info("Отправили по Http '{}': \n {}", connection.getUrl(), msg);
+                } else {
+                    log.info("Отработала заглушка, Http '{}': \n {}", connection.getUrl(), msg);
                 }
 
             } else if (connection.getType().trim().equalsIgnoreCase("Kafka")) {
 
                 if (!facility.equalsIgnoreCase("NAS") && !facility.equalsIgnoreCase("HOST")) {
-                    log.info("Отработала заглушка, Kafka '{}': \n {}", connection.getTopic(), msg);
-                } else {
                     sendToKafka(msg, connection.getTopic());
                     log.info("Отправили в Kafka '{}': \n {}", connection.getTopic(), msg);
+                } else {
+                    log.info("Отработала заглушка, Kafka '{}': \n {}", connection.getTopic(), msg);
                 }
 
             } else {

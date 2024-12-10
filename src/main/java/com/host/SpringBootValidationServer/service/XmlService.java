@@ -34,7 +34,7 @@ public class XmlService {
     }
 
 
-    public void processXmlMsg(String xml) {
+    public void processXmlMsg(String xml, Map<String, String> documentsForSend) {
 
         xml = trimXML(xml);
 
@@ -64,14 +64,12 @@ public class XmlService {
 
             /* маршрутизация */
 
-            Map<String, String> documentsForSend = new HashMap<>();
-
             messageService.checkSender(sender, errorList);
 
             try {
                 if (errorList.isEmpty()) {
                     List<String> receivers = messageService.getListReceivers(facility, knmMsg, sender);
-                    documentsForSend = generateDocListWithReceivers(document, receivers);
+                    generateDocListWithReceivers(document, receivers, documentsForSend);
                 }
             } catch (Exception e){
                 errorList.add(e.getMessage());
@@ -90,10 +88,9 @@ public class XmlService {
 
     }
 
-    private Map<String, String> generateDocListWithReceivers(Document doc, List<String> receivers) {
+    private Map<String, String> generateDocListWithReceivers(Document doc, List<String> receivers, Map<String, String> documents) {
 
         try {
-            Map<String, String> documents = new HashMap<>();
 
             for (String receiver : receivers) {
                 Document newDoc = (Document) doc.cloneNode(true);
