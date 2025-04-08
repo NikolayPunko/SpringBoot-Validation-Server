@@ -15,29 +15,73 @@
         </layout>
     </appender>
 
-    <appender name="APPFile" class="ch.qos.logback.core.FileAppender">
+
+    <appender name="APPFile"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOGS}/logger-SPRING.log</file>
+        <rollingPolicy
+                class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOGS}/archived/logger-SPRING-%d{yyyy-MM-dd}.%i.log
+            </fileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy
+                    class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>50MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
         <encoder>
-            <pattern>%d{ISO8601} %-5level %t %logger{36}: %msg%n%throwable</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%level] [%thread]
+                [%logger:%line] %msg%n
+            </pattern>
         </encoder>
     </appender>
 
-    <appender name="WEBFile" class="ch.qos.logback.core.FileAppender">
+    <appender name="WEBFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOGS}/logger-WEB.log</file>
+        <rollingPolicy
+                class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOGS}/archived/logger-WEB-%d{yyyy-MM-dd}.%i.log
+            </fileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy
+                    class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>50MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
         <encoder>
             <pattern>%d{ISO8601} %-5level %t %logger{36}: %msg%n%throwable</pattern>
         </encoder>
     </appender>
 
-    <appender name="DBFile" class="ch.qos.logback.core.FileAppender">
+    <appender name="DBFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOGS}/logger-DB.log</file>
+        <rollingPolicy
+                class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOGS}/archived/logger-DB-%d{yyyy-MM-dd}.%i.log
+            </fileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy
+                    class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>50MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
         <encoder>
             <pattern>%d{ISO8601} %-5level %t %logger{36}: %msg%n%throwable</pattern>
         </encoder>
     </appender>
 
-    <appender name="KAFKAFile" class="ch.qos.logback.core.FileAppender">
+    <appender name="KAFKAFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOGS}/logger-KAFKA.log</file>
+        <rollingPolicy
+                class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOGS}/archived/logger-KAFKA-%d{yyyy-MM-dd}.%i.log
+            </fileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy
+                    class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>50MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
         <encoder>
             <pattern>%d{ISO8601} %-5level %t %logger{36}: %msg%n%throwable</pattern>
         </encoder>
@@ -64,7 +108,7 @@
 
 
     <!-- org.hibernate -->
-    <logger name="org.hibernate" level="info" additivity="false">
+    <logger name="org.hibernate" level="debug" additivity="false">
         <appender-ref ref="DBFile" />
 <!--        <appender-ref ref="Console" />-->
     </logger>

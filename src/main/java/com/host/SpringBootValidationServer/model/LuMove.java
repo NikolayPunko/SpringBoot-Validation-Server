@@ -6,40 +6,40 @@ import lombok.*;
 
 @Getter
 @Setter
-//@Entity
-//@Table(name = "LU_MOVE")
+@Entity
+@Table(name = "BD_LUMOVE")
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
 public class LuMove {
 
-//    @Id
-//    @GeneratedValue(strategy = GenerationType.IDENTITY)
-//    @Column(name = "F_ID")
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "F_ID")
     private int fId;
 
-//    @Column(name = "ORDER_NO")
+    @Column(name = "ORDERNO")
     private String orderNo;
 
-//    @Column(name = "MOVEMENT_ID")
+    @Column(name = "MOVEMENTID")
     private int movementId;
 
-//    @Column(name = "SSCC")
+    @Column(name = "SSCC")
     private String sscc;
 
-//    @Column(name = "FROM_LOC")
+    @Column(name = "FROMLOC")
     private String fromLoc;
 
-//    @Column(name = "TO_LOC")
+    @Column(name = "TOLOC")
     private String toLoc;
 
-//    @Column(name = "REASON")
+    @Column(name = "REASON")
     private String reason;
 
-//    @Column(name = "USER_CODE")
+    @Column(name = "USERCODE")
     private String userCode;
 
-//    @Column(name = "DATETIME")
+    @Column(name = "DATETIME")
     private String dateTime;
 
     public void setFieldByName(String fieldName, String value) {
@@ -51,7 +51,7 @@ public class LuMove {
             case "TO_LOC": {this.setToLoc(value); break; }
             case "REASON": {this.setReason(value); break; }
             case "USER_CODE": {this.setUserCode(value); break; }
-            case "DATETIME": {this.setDateTime(value); break; }
+            case "DATETIME": {this.setDateTime(value);break;}
         }
     }
 

@@ -13,16 +13,16 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class LuMoveService {
 
-//    private final LuMoveRepository luMoveRepository;
-//
-//    @Autowired
-//    public LuMoveService(LuMoveRepository luMoveRepository) {
-//        this.luMoveRepository = luMoveRepository;
-//    }
+    private final LuMoveRepository luMoveRepository;
+
+    @Autowired
+    public LuMoveService(LuMoveRepository luMoveRepository) {
+        this.luMoveRepository = luMoveRepository;
+    }
 
     @Transactional
     public void save(LuMove luMove) {
-//        luMoveRepository.save(luMove);
+        luMoveRepository.save(luMove);
     }
 
     public void saveLuMoveList(List<LuMove> luMoveList) {
