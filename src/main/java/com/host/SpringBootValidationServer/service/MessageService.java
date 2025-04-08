@@ -86,8 +86,8 @@ public class MessageService {
         } else if(isXml(msg)){
             xmlService.processXmlMsg(msg, documentsForSend);
         } else {
-            log.error("Не удалось определить тип сообщения:\n {}", msg);
-            throw new RuntimeException("Не удалось определить тип сообщения!");
+            log.error("Unable to determine message type:\n {}", msg);
+            throw new RuntimeException("Unable to determine message type!");
         }
     }
 
@@ -95,11 +95,11 @@ public class MessageService {
 
         if(isJson(msg)){
             jsonService.processJsonMsg(msg,documentsForSend);
-        } else if(isXml(msg)){
+        } else if(isXml(msg)) {
             xmlService.processXmlMsg(msg, documentsForSend);
         } else {
-            log.error("Не удалось определить тип сообщения:\n {}", msg);
-            throw new RuntimeException("Не удалось определить тип сообщения!");
+            log.error("Unable to determine message type:\n {}", msg);
+            throw new RuntimeException("Unable to determine message type!");
         }
     }
 
@@ -129,7 +129,7 @@ public class MessageService {
     public void checkSender(String sender,  List<String> errorList){
         if(!NS_GRNMSG_MAP.containsKey(sender)){
             errorList.add("Sender не прописан в правилах марштрутизации;");
-            throw new RuntimeException("Sender не прописан в правилах марштрутизации;");
+            throw new RuntimeException("Sender not specified in the routing rules;");
         }
     }
 

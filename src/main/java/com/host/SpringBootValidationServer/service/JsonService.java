@@ -5,12 +5,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.host.SpringBootValidationServer.exceptions.XMLParsingException;
+import com.host.SpringBootValidationServer.model.LuMove;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -19,16 +20,17 @@ import java.util.Map;
 public class JsonService {
 
     private final MessageService messageService;
-
     private final JsonValidationService jsonValidationService;
-
     private final RoutingService routingService;
+    private final LuMoveService luMoveService;
+
 
     @Autowired
-    public JsonService(MessageService messageService, JsonValidationService jsonValidationService, RoutingService routingService) {
+    public JsonService(MessageService messageService, JsonValidationService jsonValidationService, RoutingService routingService, LuMoveService luMoveService) {
         this.messageService = messageService;
         this.jsonValidationService = jsonValidationService;
         this.routingService = routingService;
+        this.luMoveService = luMoveService;
     }
 
 
@@ -53,12 +55,18 @@ public class JsonService {
             String msgType = msgNode.get("MSGTYPE").asText();
             String facility = msgNode.get("FACILITY").asText();
 
+            if(msgType.equalsIgnoreCase("LU_MOVE")){ //обрабатываем LU_MOVE для сохранения в бд
+                List<JsonNode> luMoveElements = msgNode.findValues(msgType);
+                List<LuMove> luMoves = parseLuMovesJSON(luMoveElements);
+                luMoveService.saveLuMoveList(luMoves);
+            }
+
             /* получили искомый knm по которому будем брать нужные поля для валидации */
             String knmMsg = messageService.findKnmMsg(msgType);
 
             /* валидация */
 
-            errorList = jsonValidationService.validate(msgNode, msgType, knmMsg);
+//            errorList = jsonValidationService.validate(msgNode, msgType, knmMsg);
 
 
             /* маршрутизация */
@@ -81,7 +89,7 @@ public class JsonService {
                 documentsForSend.put(sender, docWithError);
             }
 
-            routingService.sendDocuments(documentsForSend, facility);
+//            routingService.sendDocuments(documentsForSend, facility);
 
             System.out.println(documentsForSend);
         } catch (Exception e) {
@@ -135,6 +143,52 @@ public class JsonService {
             e.printStackTrace();
             throw new XMLParsingException("Ошибка создания сообщения с ошибкой в формате JSON;");
         }
+    }
+
+    private List<LuMove> parseLuMovesJSON(List<JsonNode> luMoveElements) {
+
+        List<LuMove> luMoves = new ArrayList<>();
+
+        int counter;
+        if (luMoveElements.get(0).isArray()){
+            counter  = luMoveElements.get(0).size();
+        } else if (luMoveElements.get(0).isObject()){
+            counter = 1;
+        } else {
+            throw new RuntimeException("MsgTypesElements type not found!");
+        }
+
+        for (int i = 0; i < counter; i++) {
+
+            LuMove luMove = new LuMove();
+
+            JsonNode msgTypeNode = null;
+
+            if (luMoveElements.get(0).isArray()){
+                msgTypeNode = luMoveElements.get(0).get(i);
+            } else if (luMoveElements.get(0).isObject()){
+                msgTypeNode = luMoveElements.get(0);
+            } else {
+                throw new RuntimeException("MsgTypesElements type not found!");
+            }
+
+            Iterator<String> fieldNames = msgTypeNode.fieldNames();
+
+            while (fieldNames.hasNext()) {
+                String fieldName = fieldNames.next();
+                JsonNode node = msgTypeNode.get(fieldName);
+
+                try {
+                    luMove.setFieldByName(fieldName, node.asText());
+                } catch (Exception e){
+                    continue;
+                }
+            }
+
+            luMoves.add(luMove);
+        }
+
+        return luMoves;
     }
 
 
