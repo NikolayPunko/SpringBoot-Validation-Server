@@ -42,7 +42,9 @@ public class RoutingService {
             try {
                 connection = objectMapper.readValue(obj.getConnection(), Connection.class);
             } catch (JsonProcessingException e) {
-                throw new RuntimeException("Ошибка сопоставления со справочником NS_GRNMSG!");
+                throw new RuntimeException("Ошибка парсинга из справочника NS_GRNMSG: " + e.getMessage());
+            } catch (Exception e){
+                throw new RuntimeException("Ошибка сопоставления со справочником NS_GRNMSG: " + e.getMessage());
             }
 
             String msg = entry.getValue();
@@ -57,6 +59,11 @@ public class RoutingService {
                 }
 
             } else if (connection.getType().trim().equalsIgnoreCase("Kafka")) {
+
+                if(connection.getTopic().isEmpty()){
+                    log.error("Не указан Topic в справочнике NS_GRNMSG для {}", entry.getKey());
+                    return;
+                }
 
                 if (!facility.equalsIgnoreCase("NAS") && !facility.equalsIgnoreCase("HOST")) {
                     sendToKafka(msg, connection.getTopic());

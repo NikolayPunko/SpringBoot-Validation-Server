@@ -91,7 +91,7 @@ public class JsonService {
 
             routingService.sendDocuments(documentsForSend, facility);
 
-            System.out.println(documentsForSend);
+//            System.out.println(documentsForSend);
         } catch (Exception e) {
             log.error(e.toString(), e);
         }
