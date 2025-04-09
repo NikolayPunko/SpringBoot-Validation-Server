@@ -125,6 +125,32 @@ public class MessageService {
         }
     }
 
+    public Map<String, Boolean> defineRequiredFields(String knmMsg, List<String> errorList){
+        Map<String, Boolean> requiredFields = new HashMap<>();
+
+        Optional<List<NsNnode>> optional = Optional.ofNullable(NS_NNODE_MAP.get(knmMsg));
+        if (optional.isEmpty()) {
+            errorList.add("Поля для текущего типа сообщения не прописаны в справочнике!");
+            throw new RuntimeException("Fields in the directory NS_NNODE were not found");
+        }
+
+        for (NsNnode x : NS_NNODE_MAP.get(knmMsg)) {
+            if (x.getKnm().trim().equals(knmMsg) && x.getObligatory().trim().equalsIgnoreCase("yes")) {
+                requiredFields.put(x.getNode().trim(), false);
+            }
+        }
+
+        return requiredFields;
+    }
+
+    public void writeMissingFields(Map<String,Boolean> requiredFields, List<String> errorList){
+        for (Map.Entry<String, Boolean> entry : requiredFields.entrySet()) {
+            if (!entry.getValue()) {
+                errorList.add(String.format("Поле %s отсутствует", entry.getKey().trim()));
+            }
+        }
+    }
+
 
     public void checkSender(String sender,  List<String> errorList){
         if(!NS_GRNMSG_MAP.containsKey(sender)){

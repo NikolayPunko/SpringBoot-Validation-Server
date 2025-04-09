@@ -72,8 +72,8 @@ public class XmlService {
 
             /* валидация */
 
-//            List<String> errorList = xmlValidationService.validate(document, msgType, knmMsg);
-            List<String> errorList = new ArrayList<>(); //пропускаем т.к. справочник NS_NNODE не содержит полей для LU_MOVE по knm 0207000000
+            List<String> errorList = xmlValidationService.validate(document, msgType, knmMsg);
+//            List<String> errorList = new ArrayList<>(); //пропускаем т.к. справочник NS_NNODE не содержит полей для LU_MOVE по knm 0207000000
 
             /* маршрутизация */
 
@@ -94,8 +94,7 @@ public class XmlService {
 
             }
 
-            System.out.println();
-//            routingService.sendDocuments(documentsForSend, facility);
+            routingService.sendDocuments(documentsForSend, facility);
         } catch (Exception e) {
             log.error(e.toString(), e);
         }

@@ -37,78 +37,73 @@ public class XmlValidationService {
     }
 
     private void validateNodes(NodeList nodeList, List<String> errorList, String knmMsg) {
+        try {
+            for (int i = 0; i < nodeList.getLength(); i++) {
 
-        for (int i = 0; i < nodeList.getLength(); i++) {
+                if (nodeList.item(i).getNodeType() == Node.ELEMENT_NODE) {
 
-            if (nodeList.item(i).getNodeType() == Node.ELEMENT_NODE) {
-                /* словарь заполнения обязательных полей для одного блока msgType */
-                Map<String, Boolean> requiredFields = new HashMap<>();
-
-                for (NsNnode x : NS_NNODE_MAP.get(knmMsg)) {
-                    if (x.getKnm().trim().equals(knmMsg) && x.getObligatory().trim().equalsIgnoreCase("yes")) {
-                        requiredFields.put(x.getNode().trim(), false);
-                    }
-                }
-
-                for (int j = 0; j < nodeList.item(i).getChildNodes().getLength(); j++) {
-
-                    if (nodeList.item(i).getChildNodes().item(j).getNodeType() == Node.ELEMENT_NODE) {
-                        Node node = nodeList.item(i).getChildNodes().item(j);
-
-                        Optional<NsNnode> optionalNsNnode = NS_NNODE_MAP.get(knmMsg).stream()
-                                .filter(x -> x.getKnm().trim().equals(knmMsg) && node.getNodeName().equalsIgnoreCase(x.getNode().trim()))
-                                .findFirst();
-
-                        if (optionalNsNnode.isEmpty()) {
-                            errorList.add(String.format("Поле %s не соответствует справочнику", node.getNodeName()));
-                            continue;
-                        }
-
-                        NsNnode x = optionalNsNnode.get();
+                    /* словарь заполнения обязательных полей для одного блока msgType */
+                    Map<String, Boolean> requiredFields = messageService.defineRequiredFields(knmMsg, errorList);
 
 
-                        if (x.getObligatory().trim().equalsIgnoreCase("yes")) { //отметили что обязательное поле существует
-                            requiredFields.put(x.getNode().trim(), true);
-                        }
+                    for (int j = 0; j < nodeList.item(i).getChildNodes().getLength(); j++) {
 
-                        if (x.getType().trim().endsWith("[]")) {
-                            String knm = NS_NMSG_MAP.get(x.getType().trim().substring(0, x.getType().trim().length() - 2)).getKnm().trim();
+                        if (nodeList.item(i).getChildNodes().item(j).getNodeType() == Node.ELEMENT_NODE) {
+                            Node node = nodeList.item(i).getChildNodes().item(j);
+
+                            Optional<NsNnode> optionalNsNnode = NS_NNODE_MAP.get(knmMsg).stream()
+                                    .filter(x -> x.getKnm().trim().equals(knmMsg) && node.getNodeName().equalsIgnoreCase(x.getNode().trim()))
+                                    .findFirst();
+
+                            if (optionalNsNnode.isEmpty()) {
+                                errorList.add(String.format("Поле %s не соответствует справочнику", node.getNodeName()));
+                                continue;
+                            }
+
+                            NsNnode x = optionalNsNnode.get();
+
+
+                            if (x.getObligatory().trim().equalsIgnoreCase("yes")) { //отметили что обязательное поле существует
+                                requiredFields.put(x.getNode().trim(), true);
+                            }
+
+                            if (x.getType().trim().endsWith("[]")) {
+                                String knm = NS_NMSG_MAP.get(x.getType().trim().substring(0, x.getType().trim().length() - 2)).getKnm().trim();
                                 validateNodes(node.getChildNodes(), errorList, knm);
 
-                        } else {
+                            } else {
 
-                            if (x.getObligatory().trim().equalsIgnoreCase("yes") && node.getTextContent().isEmpty()) {
-                                errorList.add(String.format("Поле %s не должно быть пустым", node.getNodeName()));
-                                continue;
-                            } else if(node.getTextContent().isEmpty()){
-                                continue;
+                                if (x.getObligatory().trim().equalsIgnoreCase("yes") && node.getTextContent().isEmpty()) {
+                                    errorList.add(String.format("Поле %s не должно быть пустым", node.getNodeName()));
+                                    continue;
+                                } else if (node.getTextContent().isEmpty()) {
+                                    continue;
+                                }
+
+
+                                boolean result = messageService.validateFieldByType(node.getTextContent(), x.getType().trim());
+
+                                if (!result) {
+                                    errorList.add(String.format("Поле %s несоответствие типу", node.getNodeName()));
+                                }
                             }
 
-
-                            boolean result = messageService.validateFieldByType(node.getTextContent(), x.getType().trim());
-
-                            if (!result) {
-                                errorList.add(String.format("Поле %s несоответствие типу", node.getNodeName()));
-                            }
                         }
 
+
                     }
 
+                    /* логика когда обязательные поля отсутствуют в словаре requiredFields */
+                    messageService.writeMissingFields(requiredFields, errorList);
 
                 }
-
-                /* логика когда обязательные поля отсутствуют в словаре requiredFields */
-                for (Map.Entry<String, Boolean> entry : requiredFields.entrySet()) {
-                    if (!entry.getValue()) {
-                        errorList.add(String.format("Поле %s отсутствует", entry.getKey().trim()));
-                    }
-                }
-
             }
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            return;
         }
+
     }
-
-
 
 
 }

@@ -66,7 +66,7 @@ public class JsonService {
 
             /* валидация */
 
-//            errorList = jsonValidationService.validate(msgNode, msgType, knmMsg);
+            errorList = jsonValidationService.validate(msgNode, msgType, knmMsg);
 
 
             /* маршрутизация */
@@ -89,7 +89,7 @@ public class JsonService {
                 documentsForSend.put(sender, docWithError);
             }
 
-//            routingService.sendDocuments(documentsForSend, facility);
+            routingService.sendDocuments(documentsForSend, facility);
 
             System.out.println(documentsForSend);
         } catch (Exception e) {
